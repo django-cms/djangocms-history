@@ -1,0 +1,4 @@
+include LICENSE.txt
+include README.rst
+recursive-include djangocms_undo/templates *
+recursive-exclude * *.pyc
