@@ -18,6 +18,15 @@ django CMS History has been rewritten from the ground up.
 Installation
 ============
 
+Requirements
+============
+
+django CMS history requires that you have a django CMS 3.4.2 (or higher) project already running and set up.
+
+
+To install
+==========
+
 To install django CMS history, make the ``djangocms_history`` module available in your project's Python environment.
 
 Add ``djangocms_history`` to your project's ``INSTALLED_APPS``.
