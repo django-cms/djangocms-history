@@ -31,7 +31,7 @@ To install django CMS history, make the ``djangocms_history`` module available i
 
 django CMS history is not yet available on PyPI, but can be installed via pip from GitHub with::
 
-    pip install git+git://github.com/dcramer/djangocms-history#egg=djangocms-history
+    pip install git+git://github.com/divio/djangocms-history#egg=djangocms-history
 
 Add ``djangocms_history`` to your project's ``INSTALLED_APPS``.
 
