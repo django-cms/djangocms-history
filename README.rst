@@ -2,17 +2,17 @@
 django CMS History
 ******************
 
-django CMS History is an addon application to provide revision history support in `django CMS
-<https://django-cms.org/>`_.
+django CMS History is an addon application to provide undo/redo functionality in `django CMS
+<https://django-cms.org/>`_, by maintaining content history.
 
 Some of the functionality in this application was previously included in django CMS itself. However, it became apparent
-that some users did not want it, and some wanted revision support that worked differently.
+that some users did not want it, and some wanted functionality that worked differently.
 
 In keeping with the django CMS philosophy of maintaining only core CMS functionality as part of the package itself,
-revision management was removed from django CMS in version 3.4 and has been spun off into an independent application.
+history management was removed from django CMS in version 3.4 and has been spun off into an independent application.
 
-django CMS History has been rewritten from the ground up.
-
+django CMS History has been rewritten from the ground up. It will continue to be developed. New functionality and
+improvements will be introduced in future releases.
 
 ============
 Installation
@@ -28,6 +28,10 @@ To install
 ==========
 
 To install django CMS history, make the ``djangocms_history`` module available in your project's Python environment.
+
+django CMS history is not yet available on PyPI, but can be installed via pip from GitHub with::
+
+    pip install git+git://github.com/dcramer/djangocms-history#egg=djangocms-history
 
 Add ``djangocms_history`` to your project's ``INSTALLED_APPS``.
 
