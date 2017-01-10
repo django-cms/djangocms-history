@@ -90,10 +90,12 @@ class UndoRedoToolbar(CMSToolbar):
     def get_undo_button(self):
         url = reverse('admin:djangocms_history_undo')
         disabled = not bool(self.active_operation)
+        # TODO: Replace with icon to save space
         return self._get_ajax_button(ugettext('Undo'), url, disabled=disabled)
 
     def get_redo_button(self):
         operation = self.get_inactive_operation()
         url = reverse('admin:djangocms_history_redo')
         disabled = not bool(operation)
+        # TODO: Replace with icon to save space
         return self._get_ajax_button(ugettext('Redo'), url, disabled=disabled)
