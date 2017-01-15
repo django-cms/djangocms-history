@@ -11,6 +11,7 @@ from django.db import models
 from django.db import transaction
 from django.db.models import Q
 from django.dispatch import receiver
+from django.utils import six
 
 from cms import operations
 from cms.models import Placeholder
@@ -27,6 +28,7 @@ from .datastructures import ArchivedPlugin
 
 
 dump_json = functools.partial(json.dumps, cls=DjangoJSONEncoder)
+reduce = six.moves.reduce
 
 
 # TODO: This will likely change into a class based pool integration
