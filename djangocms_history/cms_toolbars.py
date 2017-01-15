@@ -40,6 +40,8 @@ class AjaxButton(BaseButton):
 
 @toolbar_pool.register
 class UndoRedoToolbar(CMSToolbar):
+    undo_image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABOklEQVR4Ae3WNVZDQRhAYdyhimcBeMsG6CI1C8Dd9pK0rACXCm+QDoeaFnfnFlNNns4bnHvO10T/55Plsv/+i6ITMzjCtXCAOfFeBJ5axCb80h+n8YA3G49IIwSl3oRtBBDHKd5cukBSeQDhGC94U/SCXvUBjO2gF9UoFWoxiF2TIZI6BrhHF3JgVq4Y7sHgcIS8DnCEAJzUaDBESsch2IYfTuo1uDoiOs6BdTgp1+Cc6IBtqzYDLMBpg9J3p/Gp1UoDHOBTK5MGuMKnViFfjn/uEAx95UmofBnKFaAKbuszuBGFVf58Ag9IgLzfip2WjzHpYTSIXIWH0TmCcFUDXk0ex8OoRwXKUIchi8dxAkq1fMWCRK5JcUl2jgS0FMAInh0uSlPyMdc5SBdmsItLXGEfM+hwe6n99987pVTygpWk5ykAAAAASUVORK5CYII='
+    redo_image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABP0lEQVR42u3WP0vDQBiAcSXoYMWtpcYPoFjd3R01rn4Alx40Q9vv0q5+AxGsbiKOuoharM7OQv8MVqzng3Q6Ei5vLmQxD/zGcC9ckruFoiJhPhSuMMBk7g0XUNhA5q2jiy9oiyk6xiBl3OMG4gKMoIU+cIAKnqABWSFm0CnN8A4NQNBRzOJ9NFFDCSvYRB0PtqEkez6M2NsGPMS1CIVP1wG6EYvvI0llDFwG8CPe9oZg8UfXLVARe+4hSXdZvAOXxgNNJO3asvgtrL0aD20j18bGAKv/bgBzC2rILflLKM/9M3RP/iMKIW0Ly7Am/xXbCzDFedohqjGHUWjZDg8t4zA6wxLEBYg7jlvYQQlr2EUbz9CGH+xhXv4XkhM4dYhhyivZMTKpKriUfuMUFWSejzp6eMEYI/TRg/pbuKhI0C8BZPKBEtpCEgAAAABJRU5ErkJggg=='
 
     def populate(self):
         self.active_operation = self.get_active_operation()
@@ -90,12 +92,28 @@ class UndoRedoToolbar(CMSToolbar):
     def get_undo_button(self):
         url = reverse('admin:djangocms_history_undo')
         disabled = not bool(self.active_operation)
-        # TODO: Replace with icon to save space
-        return self._get_ajax_button(ugettext('Undo'), url, disabled=disabled)
+        return self._get_ajax_button(
+            """
+            <span>
+                <img
+                    aria-hidden="true" style="vertical-align: text-bottom"
+                    width="16" height="16" src="{url}" alt="{title}"
+                    title="{title}">
+                <span class="cms-hidden" style="display: none;">{title}</span>
+            </span>
+            """.format(url=self.undo_image, title=ugettext('Undo')), url, disabled=disabled)
 
     def get_redo_button(self):
         operation = self.get_inactive_operation()
         url = reverse('admin:djangocms_history_redo')
         disabled = not bool(operation)
-        # TODO: Replace with icon to save space
-        return self._get_ajax_button(ugettext('Redo'), url, disabled=disabled)
+        return self._get_ajax_button(
+            """
+            <span>
+                <img
+                    aria-hidden="true" style="vertical-align: text-bottom"
+                    width="16" height="16" src="{url}" alt="{title}"
+                    title="{title}">
+                <span class="cms-hidden" style="display: none;">{title}</span>
+            </span>
+            """.format(url=self.redo_image, title=ugettext('Redo')), url, disabled=disabled)
