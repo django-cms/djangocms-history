@@ -5,8 +5,7 @@ import djangocms_history
 
 INSTALL_REQUIREMENTS = [
     'Django>=1.8,<1.11',
-    # TODO: Un-comment once cms is released
-    # 'django-cms>=3.4.2',
+    'django-cms>=3.4.2',
 ]
 
 
