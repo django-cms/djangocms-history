@@ -105,18 +105,18 @@ def redo_add_plugin(action):
 
 def undo_change_plugin(action):
     archived_plugins = action.get_pre_action_data()['plugins']
-    archived_plugins = [plugin for plugin in archived_plugins if plugin.data]
 
-    for archived_plugin in archived_plugins:
-        plugin.model.objects.filter(pk=plugin.pk).update(**archived_plugin.data)
+    for plugin in archived_plugins:
+        if plugin.data:
+            plugin.model.objects.filter(pk=plugin.pk).update(**plugin.data)
 
 
 def redo_change_plugin(action):
-    raw_plugins = action.get_post_action_data()['plugins']
-    raw_plugins = [plugin for plugin in raw_plugins if plugin.data]
+    archived_plugins = action.get_post_action_data()['plugins']
 
-    for plugin in raw_plugins:
-        plugin.model.objects.filter(pk=plugin.pk).update(**plugin.data)
+    for plugin in archived_plugins:
+        if plugin.data:
+            plugin.model.objects.filter(pk=plugin.pk).update(**plugin.data)
 
 
 def undo_delete_plugin(action):
