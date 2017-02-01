@@ -195,11 +195,15 @@ def create_placeholder_operation(sender, **kwargs):
     if not handler or not cms_history:
         return
 
+    # kwargs['language'] can be None if the user has not enabled
+    # I18N or is not using i18n_patterns
+    language = kwargs['language'] or settings.LANGUAGE_CODE
+
     operation = PlaceholderOperation.objects.create(
         operation_type=operation_type,
         token=kwargs['token'],
         origin=kwargs['origin'],
-        language=kwargs['language'],
+        language=language,
         user=request.user,
         user_session_key=request.session.session_key,
         site=Site.objects.get_current(request),
