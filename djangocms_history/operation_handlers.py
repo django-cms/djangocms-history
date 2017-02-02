@@ -385,7 +385,7 @@ def pre_clear_placeholder(operation, **kwargs):
 
     operation.create_action(
         action=actions.CLEAR_PLACEHOLDER,
-        language=kwargs['language'],
+        language=operation.language,
         placeholder=kwargs['placeholder'],
         pre_data=action_data,
     )
