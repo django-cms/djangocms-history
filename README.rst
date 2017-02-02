@@ -27,11 +27,9 @@ django CMS history requires that you have a django CMS 3.4.2 (or higher) project
 To install
 ==========
 
-To install django CMS history, make the ``djangocms_history`` module available in your project's Python environment.
+Run::
 
-django CMS history is not yet available on PyPI, but can be installed via pip from GitHub with::
-
-    pip install git+git://github.com/divio/djangocms-history#egg=djangocms-history
+    pip install djangocms-history
 
 Add ``djangocms_history`` to your project's ``INSTALLED_APPS``.
 
