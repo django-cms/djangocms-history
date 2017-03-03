@@ -5,6 +5,7 @@ import operator
 
 from django.conf import settings
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.sites.models import Site
 from django.db import models
@@ -131,7 +132,8 @@ def archive_old_operations(sender, request, user, **kwargs):
     Archives all user operations that don't match the new user session
     """
     if not hasattr(request, 'user'):
-        return
+        raise ImproperlyConfigured("A user is needed by djangocms-history, check the settings.")
+        
     site = Site.objects.get_current(request)
     p_operations = (
         PlaceholderOperation
