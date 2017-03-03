@@ -130,6 +130,8 @@ def archive_old_operations(sender, request, user, **kwargs):
     """
     Archives all user operations that don't match the new user session
     """
+    if not hasattr(request, 'user'):
+        return
     site = Site.objects.get_current(request)
     p_operations = (
         PlaceholderOperation
