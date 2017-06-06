@@ -62,7 +62,18 @@ class UndoRedoToolbar(CMSToolbar):
         '4zA6wxLEBYg7jlvYQQlr2EUbz9CGH+xhXv4XkhM4dYhhyivZMTKpKriUfuMUFWSejzp6eMEYI/TRg/pbuKhI0'
         'C8BZPKBEtpCEgAAAABJRU5ErkJggg=='
     )
+
+    # django CMS 3.4 compatibility
     icon_css = '<style>.cms-btn-disabled img {opacity: 0.2;}</style>'
+
+    @property
+    def request_path(self):
+        try:
+            origin = self.toolbar.request_path
+        except AttributeError:
+            # django CMS < 3.5 compatibility
+            origin = self.request.path
+        return origin
 
     def populate(self):
         self.active_operation = self.get_active_operation()
@@ -73,6 +84,7 @@ class UndoRedoToolbar(CMSToolbar):
     def get_operations(self):
         operations = get_operations_from_request(
             self.request,
+            path=self.request_path,
             language=self.toolbar.language,
         )
         return operations
@@ -98,7 +110,7 @@ class UndoRedoToolbar(CMSToolbar):
     def _get_ajax_button(self, name, url, icon, disabled=True):
         data = {
             'language': self.toolbar.language,
-            'cms_path': self.request.path,
+            'cms_path': self.request_path,
             'csrfmiddlewaretoken': self.toolbar.csrf_token,
         }
         button = AjaxButton(
@@ -135,8 +147,6 @@ class UndoRedoToolbar(CMSToolbar):
         return button
 
     def render_addons(self, context):
-        # TODO: This is a workaround to add our css to sekizai
-        # Should be fixed on the cms core by exposing the context
-        # to the toolbar populate methods.
+        # django CMS 3.4 compatibility
         context[get_varname()]['css'].append(self.icon_css)
         return []
