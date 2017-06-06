@@ -284,7 +284,7 @@ class PlaceholderOperation(models.Model):
     operation_type = models.CharField(max_length=30, choices=OPERATION_TYPES)
     token = models.CharField(max_length=120, db_index=True)
     origin = models.CharField(max_length=255, db_index=True)
-    language = models.CharField(max_length=5, choices=settings.LANGUAGES)
+    language = models.CharField(max_length=15, choices=settings.LANGUAGES)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -366,7 +366,7 @@ class PlaceholderAction(models.Model):
     pre_action_data = models.TextField(blank=True)
     post_action_data = models.TextField(blank=True)
     placeholder = models.ForeignKey(to=Placeholder)
-    language = models.CharField(max_length=5, choices=settings.LANGUAGES)
+    language = models.CharField(max_length=15, choices=settings.LANGUAGES)
     operation = models.ForeignKey(to=PlaceholderOperation, related_name='actions')
     order = models.PositiveIntegerField(default=1)
 
