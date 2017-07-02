@@ -24,6 +24,7 @@ from cms.signals import (
 from . import actions
 from . import action_handlers
 from . import operation_handlers
+from . import signals
 from .datastructures import ArchivedPlugin
 
 
@@ -339,17 +340,32 @@ class PlaceholderOperation(models.Model):
 
     @transaction.atomic
     def undo(self):
-        for action in self.actions.order_by('order'):
+        actions = self.actions.order_by('order')
+
+        for action in actions:
             action.undo()
+
         self.is_applied = False
         self.save(update_fields=['is_applied'])
+        signals.post_operation_undo.send(
+            sender=self.__class__,
+            operation=self,
+            actions=actions,
+        )
 
     @transaction.atomic
     def redo(self):
-        for action in self.actions.order_by('-order'):
+        actions = self.actions.order_by('-order')
+
+        for action in actions:
             action.redo()
         self.is_applied = True
         self.save(update_fields=['is_applied'])
+        signals.post_operation_redo.send(
+            sender=self.__class__,
+            operation=self,
+            actions=actions,
+        )
 
 
 class PlaceholderAction(models.Model):
