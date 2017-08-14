@@ -4,10 +4,12 @@ import json
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext
 
+from cms.api import get_page_draft
 from cms.constants import REFRESH_PAGE
 from cms.toolbar_base import CMSToolbar
 from cms.toolbar_pool import toolbar_pool
 from cms.toolbar.items import BaseButton, ButtonList
+from cms.utils.page_permissions import user_can_change_page
 
 from sekizai.helpers import get_varname
 
@@ -76,9 +78,13 @@ class UndoRedoToolbar(CMSToolbar):
         return origin
 
     def populate(self):
-        self.active_operation = self.get_active_operation()
+        if not self.toolbar.edit_mode:
+            return
 
-        if self.toolbar.edit_mode:
+        cms_page = get_page_draft(self.request.current_page)
+
+        if not cms_page or user_can_change_page(self.request.user, cms_page):
+            self.active_operation = self.get_active_operation()
             self.add_buttons()
 
     def get_operations(self):

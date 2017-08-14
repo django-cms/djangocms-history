@@ -160,9 +160,8 @@ def pre_page_operation_handler(sender, **kwargs):
     elif operation_type in operations.PAGE_TRANSLATION_OPERATIONS:
         # Fetch all operations which act on the translation only
         page = kwargs['obj']
-        page.set_translations_cache()
         translation = kwargs['translation']
-        page_urls = (page.get_absolute_url(lang) for lang in page._title_cache)
+        page_urls = (page.get_absolute_url(lang) for lang in page.get_languages())
         p_operations = p_operations.filter(
             origin__in=page_urls,
             language=translation.language,
@@ -171,8 +170,7 @@ def pre_page_operation_handler(sender, **kwargs):
         # Fetch all operations which act on a page including its children
         # for all languages of the page
         page = kwargs['obj']
-        page.set_translations_cache()
-        page_urls = (page.get_absolute_url(lang) for lang in page._title_cache)
+        page_urls = (page.get_absolute_url(lang) for lang in page.get_languages())
         queries = [Q(origin__startswith=url) for url in page_urls]
         p_operations = p_operations.filter(reduce(operator.or_, queries))
 
