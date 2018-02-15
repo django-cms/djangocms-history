@@ -174,10 +174,15 @@ def pre_page_operation_handler(sender, **kwargs):
         queries = [Q(origin__startswith=url) for url in page_urls]
         p_operations = p_operations.filter(reduce(operator.or_, queries))
 
-    if kwargs['obj'].site_id:
-        # Both cms.Page and cms.StaticPlaceholder have a site field
-        # the site field on cms.StaticPlaceholder is optional though.
-        p_operations = p_operations.filter(site=kwargs['obj'].site)
+    # Both cms.Page and cms.StaticPlaceholder have a site field
+    # the site field on cms.StaticPlaceholder is optional though.
+    try:
+        if kwargs['obj'].node.site_id:
+            # cms.Page in django-cms >= 3.5.0
+            p_operations = p_operations.filter(site=kwargs['obj'].node.site)
+    except:
+        if kwargs['obj'].site_id:
+            p_operations = p_operations.filter(site=kwargs['obj'].site)
 
     # Archive all fetched operations
     p_operations.update(is_archived=True)
@@ -304,7 +309,7 @@ class PlaceholderOperation(models.Model):
     )
     is_applied = models.BooleanField(default=False)
     is_archived = models.BooleanField(default=False)
-    site = models.ForeignKey(Site)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE) # CASCADE is default for Django<=1.11
 
     class Meta:
         get_latest_by = "date_created"
@@ -385,9 +390,9 @@ class PlaceholderAction(models.Model):
     action = models.CharField(max_length=30, choices=ACTION_CHOICES)
     pre_action_data = models.TextField(blank=True)
     post_action_data = models.TextField(blank=True)
-    placeholder = models.ForeignKey(to=Placeholder)
+    placeholder = models.ForeignKey(to=Placeholder, on_delete=models.CASCADE)
     language = models.CharField(max_length=15, choices=settings.LANGUAGES)
-    operation = models.ForeignKey(to=PlaceholderOperation, related_name='actions')
+    operation = models.ForeignKey(to=PlaceholderOperation, related_name='actions', on_delete=models.CASCADE)
     order = models.PositiveIntegerField(default=1)
 
     class Meta:
