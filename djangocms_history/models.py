@@ -177,12 +177,12 @@ def pre_page_operation_handler(sender, **kwargs):
     # Both cms.Page and cms.StaticPlaceholder have a site field
     # the site field on cms.StaticPlaceholder is optional though.
     try:
-        if kwargs['obj'].node.site_id:
-            # cms.Page in django-cms >= 3.5.0
-            p_operations = p_operations.filter(site=kwargs['obj'].node.site)
-    except:
-        if kwargs['obj'].site_id:
-            p_operations = p_operations.filter(site=kwargs['obj'].site)
+        site_id = kwargs['obj'].node.site_id
+    except AttributeError:
+        site_id = kwargs['obj'].site_id
+
+    if site_id:
+        p_operations = p_operations.filter(site=site_id)
 
     # Archive all fetched operations
     p_operations.update(is_archived=True)
@@ -309,7 +309,7 @@ class PlaceholderOperation(models.Model):
     )
     is_applied = models.BooleanField(default=False)
     is_archived = models.BooleanField(default=False)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE) # CASCADE is default for Django<=1.11
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
 
     class Meta:
         get_latest_by = "date_created"

@@ -4,6 +4,7 @@ import json
 try:
     from django.urls import reverse
 except ImportError:
+    # django <= 1.9 compat
     from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext
 
