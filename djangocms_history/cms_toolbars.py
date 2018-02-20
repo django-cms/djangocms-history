@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 import json
 
-from django.core.urlresolvers import reverse
+try:
+    from django.urls import reverse
+except ImportError:
+    # django <= 1.9 compat
+    from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext
 
 from cms.api import get_page_draft

@@ -40,8 +40,8 @@ class Migration(migrations.Migration):
                 ('date_created', models.DateTimeField(auto_now_add=True, verbose_name='date created', db_index=True)),
                 ('is_applied', models.BooleanField(default=False)),
                 ('is_archived', models.BooleanField(default=False)),
-                ('site', models.ForeignKey(to='sites.Site')),
-                ('user', models.ForeignKey(verbose_name='user', to=settings.AUTH_USER_MODEL)),
+                ('site', models.ForeignKey(to='sites.Site', on_delete=models.CASCADE)),
+                ('user', models.ForeignKey(verbose_name='user', to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE)),
             ],
             options={
                 'ordering': ['-date_created'],
@@ -51,12 +51,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='placeholderaction',
             name='operation',
-            field=models.ForeignKey(related_name='actions', to='djangocms_history.PlaceholderOperation'),
+            field=models.ForeignKey(related_name='actions', to='djangocms_history.PlaceholderOperation', on_delete=models.CASCADE),
         ),
         migrations.AddField(
             model_name='placeholderaction',
             name='placeholder',
-            field=models.ForeignKey(to='cms.Placeholder'),
+            field=models.ForeignKey(to='cms.Placeholder', on_delete=models.CASCADE),
         ),
         migrations.AlterUniqueTogether(
             name='placeholderaction',
