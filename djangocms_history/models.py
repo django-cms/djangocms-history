@@ -400,7 +400,7 @@ class PlaceholderAction(models.Model):
         unique_together = ('operation', 'order')
 
     def _object_version_data_hook(self, data):
-        if data and 'pk' in data:
+        if data and 'pk' in data and 'model' not in data:
             return ArchivedPlugin(**data)
         return data
 
