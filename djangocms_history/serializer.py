@@ -21,7 +21,7 @@ class PythonSerializerWithJsonField(PythonSerializer):
         # Protected types (i.e., primitives like None, numbers, dates,
         # and Decimals) are passed through as is. And if is none JsonField,
         # all other values are converted to string first.
-        return value if is_protected_type(value) or  jsonfield_to_dictelse field.value_to_string(obj)
+        return value if is_protected_type(value) or jsonfield_to_dict else field.value_to_string(obj)
 
     def handle_field(self, obj, field):
         print(obj, field)
