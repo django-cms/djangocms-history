@@ -2,7 +2,6 @@ from collections import defaultdict
 from datetime import timedelta
 
 from django.contrib.sites.models import Site
-
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import signals
 from django.utils import timezone
@@ -75,7 +74,7 @@ def get_plugin_data(plugin, only_meta=False):
     else:
         serializers = PythonSerializerWithJsonField()
         plugin_fields = get_plugin_fields(plugin.plugin_type)
-        _plugin_data = serializers.serialize((plugin,), fields=plugin_fields ,)[0]
+        _plugin_data = serializers.serialize((plugin,), fields=plugin_fields)[0]
         custom_data = _plugin_data['fields']
 
     plugin_data = {
