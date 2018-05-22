@@ -14,16 +14,14 @@ class PythonSerializerWithJsonField(PythonSerializer):
         value = field.value_from_object(obj)
         if isinstance(value, str):
             try:
-                value_to_dict = json.loads(value)
-                if isinstance(value_to_dict, dict):
-                    value = value_to_dict
-                    jsonfield = True
+                value = json.loads(value)
+                jsonfield_to_dict = True
             except ValueError:
                 pass
         # Protected types (i.e., primitives like None, numbers, dates,
-        # and Decimals) are passed through as is. if is none JsonField,
+        # and Decimals) are passed through as is. And if is none JsonField,
         # all other values are converted to string first.
-        return value if is_protected_type(value) or jsonfield else field.value_to_string(obj)
+        return value if is_protected_type(value) or  jsonfield_to_dictelse field.value_to_string(obj)
 
     def handle_field(self, obj, field):
         print(obj, field)
