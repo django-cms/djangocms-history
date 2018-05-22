@@ -10,7 +10,6 @@ class PythonSerializerWithJsonField(PythonSerializer):
 
     internal_use_only = True
 
-
     def _value_from_field(self, obj, field, jsonfield=None):
         value = field.value_from_object(obj)
         if isinstance(value, str):
