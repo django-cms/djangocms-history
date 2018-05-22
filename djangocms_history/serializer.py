@@ -17,8 +17,8 @@ class PythonSerializerWithJsonField(PythonSerializer):
             try:
                 value_to_dict = json.loads(value)
                 if isinstance(value_to_dict, dict):
-                    value=value_to_dict
-                    jsonfield=True
+                    value = value_to_dict
+                    jsonfield = True
             except ValueError:
                 pass
         # Protected types (i.e., primitives like None, numbers, dates,
