@@ -4,8 +4,8 @@ import djangocms_history
 
 
 INSTALL_REQUIREMENTS = [
-    'Django>=1.8,<2.0',
-    'django-cms>=3.4.2',
+    'Django>=1.11,<2.2',
+    'django-cms>=3.4.5',
     'django-sekizai>=0.7',
 ]
 
