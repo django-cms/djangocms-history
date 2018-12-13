@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = djangocms_attribute_field
+source = djangocms_history
 omit =
     migrations/*
     tests/*
