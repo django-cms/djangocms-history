@@ -24,5 +24,4 @@ class PythonSerializerWithJsonField(PythonSerializer):
         return value if is_protected_type(value) or jsonfield_to_dict else field.value_to_string(obj)
 
     def handle_field(self, obj, field):
-        print(obj, field)
         self._current[field.name] = self._value_from_field(obj, field)
