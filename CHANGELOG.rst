@@ -6,6 +6,8 @@ Changelog
 ==================
 
 * Added support for Django 2.0 and 2.1
+* Cleaned up file structure
+* Added proper test setup
 
 
 0.6.0 (2018-11-14)
