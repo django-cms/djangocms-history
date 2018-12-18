@@ -8,6 +8,9 @@ from .models import PlaceholderOperation
 @admin.register(PlaceholderOperation)
 class PlaceholderOperationAdmin(admin.ModelAdmin):
 
+    def get_model_perms(self, request):
+        return {}
+
     def has_add_permission(self, request):
         return False
 
