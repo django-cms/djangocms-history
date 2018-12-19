@@ -2,6 +2,12 @@
 Changelog
 =========
 
+1.0.1 (unreleased)
+==================
+
+* Make sure placeholder operations are not shown in the admin
+
+
 1.0.0 (2018-12-17)
 ==================
 
