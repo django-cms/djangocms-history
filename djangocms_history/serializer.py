@@ -2,10 +2,10 @@ from django.core.serializers.python import Serializer as PythonSerializer
 from django.utils.encoding import is_protected_type
 import json
 
-class PythonSerializerWithJsonField(PythonSerializer):
+class PythonSerializerWithDetectNestedJsonField(PythonSerializer):
 
     """
-    Serialize a QuerySet with JsonField to basic Python objects.
+    Serialize a QuerySet and detect nested JsonField to basic Python objects.
     """
 
     internal_use_only = True

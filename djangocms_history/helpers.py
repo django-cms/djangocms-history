@@ -16,7 +16,7 @@ from cms.utils import get_language_from_request
 
 from .utils import get_plugin_fields, get_plugin_model
 
-from .serializer import  PythonSerializerWithJsonField
+from .serializer import  PythonSerializerWithDetectNestedJsonField
 
 def delete_plugins(placeholder, plugin_ids, nested=True):
     # With plugins, we can't do queryset.delete()
@@ -72,7 +72,7 @@ def get_plugin_data(plugin, only_meta=False):
     if only_meta:
         custom_data = None
     else:
-        serializers = PythonSerializerWithJsonField()
+        serializers = PythonSerializerWithDetectNestedJsonField()
         plugin_fields = get_plugin_fields(plugin.plugin_type)
         _plugin_data = serializers.serialize((plugin,), fields=plugin_fields)[0]
         custom_data = _plugin_data['fields']
