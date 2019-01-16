@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from cms.plugin_pool import plugin_pool
 
 from django.utils.lru_cache import lru_cache

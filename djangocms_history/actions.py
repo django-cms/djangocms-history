@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Actions are internal to djangocms-history
 A placeholder operation can have multiple actions.
