@@ -2,6 +2,7 @@
 import json
 
 from django.utils.translation import ugettext
+from django.urls import reverse
 
 from cms.api import get_page_draft
 from cms.constants import REFRESH_PAGE
@@ -16,16 +17,6 @@ from .compat import CMS_GTE_36
 from .helpers import (
     get_active_operation, get_inactive_operation, get_operations_from_request,
 )
-
-
-try:
-    from django.urls import reverse
-except ImportError:
-    # django <= 1.9 compat
-    from django.core.urlresolvers import reverse
-
-
-
 
 
 class AjaxButton(BaseButton):
