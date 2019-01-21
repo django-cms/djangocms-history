@@ -2,10 +2,15 @@
 Changelog
 =========
 
+
 1.0.1 (unreleased)
 ==================
 
+* Extended test matrix
 * Make sure placeholder operations are not shown in the admin
+* Added isort and adapted imports
+* Adapted code base to align with other supported addons
+* Added translations
 
 
 1.0.0 (2018-12-17)

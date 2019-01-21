@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
+from django.conf.urls import url
 from django.contrib import admin
-from django.conf.urls import  url
 
 from . import views
 from .models import PlaceholderOperation
