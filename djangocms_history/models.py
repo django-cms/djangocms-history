@@ -255,8 +255,8 @@ def update_placeholder_operation(sender, **kwargs):
     # Mark any operation from this user's session made on a separate path
     # or made on the current path but not applied as archived.
     p_operations.filter(
-        ~Q(origin=kwargs['origin'])
-        |Q(origin=kwargs['origin'], is_applied=False)
+        ~ Q(origin=kwargs['origin'])
+        | Q(origin=kwargs['origin'], is_applied=False)
     ).update(is_archived=True)
 
     # Last, mark any operation made by another user on the current path
