@@ -3,11 +3,9 @@ from django.utils.encoding import is_protected_type
 import json
 
 class PythonSerializerWithDetectNestedJsonField(PythonSerializer):
-
     """
     Serialize a QuerySet and detect nested JsonField to basic Python objects.
     """
-
     internal_use_only = True
 
     def _value_from_field(self, obj, field, jsonfield=None):
