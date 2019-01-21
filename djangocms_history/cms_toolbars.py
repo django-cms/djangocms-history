@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import json
 
-from django.utils.translation import ugettext
 from django.urls import reverse
+from django.utils.translation import ugettext
 
 from cms.api import get_page_draft
 from cms.constants import REFRESH_PAGE
