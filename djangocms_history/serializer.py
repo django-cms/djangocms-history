@@ -8,7 +8,7 @@ class PythonSerializerWithDetectNestedJsonField(PythonSerializer):
     """
     internal_use_only = True
 
-    def _value_from_field(self, obj, field, jsonfield=None):
+    def _value_from_field(self, obj, field, jsonfield_to_dict=None):
         value = field.value_from_object(obj)
         if isinstance(value, str):
             try:
