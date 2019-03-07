@@ -75,7 +75,12 @@ def get_plugin_data(plugin, only_meta=False):
         serializers = PythonSerializerWithDetectNestedJsonField()
         plugin_fields = get_plugin_fields(plugin.plugin_type)
         _plugin_data = serializers.serialize((plugin,), fields=plugin_fields)[0]
-        custom_data = _plugin_data['fields']
+        if 'fields' in  _plugin_data:
+            custom_data = _plugin_data['fields']
+        elif 'fields' in  _plugin_data[0]:
+            custom_data = _plugin_data[0]['fields']
+        else:
+            custom_data = None
 
     plugin_data = {
         'pk': plugin.pk,
