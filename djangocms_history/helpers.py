@@ -80,7 +80,7 @@ def get_plugin_data(plugin, only_meta=False):
         elif 'fields' in _plugin_data[0]:
             custom_data = _plugin_data[0]['fields']
         else:
-            custom_data = None
+            custom_data = _plugin_data
 
     plugin_data = {
         'pk': plugin.pk,
