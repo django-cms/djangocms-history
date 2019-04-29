@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from cms.models import CMSPlugin
 from cms.utils.plugins import reorder_plugins
 

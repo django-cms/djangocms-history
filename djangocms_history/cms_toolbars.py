@@ -1,26 +1,21 @@
 # -*- coding: utf-8 -*-
 import json
 
-try:
-    from django.urls import reverse
-except ImportError:
-    # django <= 1.9 compat
-    from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.translation import ugettext
 
 from cms.api import get_page_draft
 from cms.constants import REFRESH_PAGE
+from cms.toolbar.items import BaseButton, ButtonList
 from cms.toolbar_base import CMSToolbar
 from cms.toolbar_pool import toolbar_pool
-from cms.toolbar.items import BaseButton, ButtonList
 from cms.utils.page_permissions import user_can_change_page
 
 from sekizai.helpers import get_varname
 
+from .compat import CMS_GTE_36
 from .helpers import (
-    get_active_operation,
-    get_inactive_operation,
-    get_operations_from_request,
+    get_active_operation, get_inactive_operation, get_operations_from_request,
 )
 
 
@@ -82,7 +77,11 @@ class UndoRedoToolbar(CMSToolbar):
         return origin
 
     def populate(self):
-        if not self.toolbar.edit_mode:
+        # django CMS >= 3.6
+        if CMS_GTE_36 and not self.toolbar.edit_mode_active:
+            return
+        # django CMS <= 3.5
+        if not CMS_GTE_36 and not self.toolbar.edit_mode:
             return
 
         cms_page = get_page_draft(self.request.current_page)
@@ -92,10 +91,15 @@ class UndoRedoToolbar(CMSToolbar):
             self.add_buttons()
 
     def get_operations(self):
+        if CMS_GTE_36:
+            toolbar_language = self.toolbar.toolbar_language
+        else:
+            toolbar_language = self.toolbar.language
+
         operations = get_operations_from_request(
             self.request,
             path=self.request_path,
-            language=self.toolbar.language,
+            language=toolbar_language,
         )
         return operations
 
@@ -118,8 +122,13 @@ class UndoRedoToolbar(CMSToolbar):
         self.toolbar.add_item(container)
 
     def _get_ajax_button(self, name, url, icon, disabled=True):
+        if CMS_GTE_36:
+            toolbar_language = self.toolbar.toolbar_language
+        else:
+            toolbar_language = self.toolbar.language
+
         data = {
-            'language': self.toolbar.language,
+            'language': toolbar_language,
             'cms_path': self.request_path,
             'csrfmiddlewaretoken': self.toolbar.csrf_token,
         }

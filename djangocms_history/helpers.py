@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from collections import defaultdict
 from datetime import timedelta
 
@@ -7,13 +8,10 @@ from django.db.models import signals
 from django.utils import timezone
 
 from cms.models import CMSPlugin
-from cms.signals import (
-    pre_delete_plugins,
-    pre_save_plugins,
-    post_delete_plugins
-)
 from cms.utils import get_language_from_request
+
 from .serializer import PythonSerializerWithDetectNestedJsonField
+from .compat import CMS_GTE_36
 from .utils import get_plugin_fields, get_plugin_model
 
 
@@ -144,6 +142,15 @@ def get_operations_from_request(request, path=None, language=None):
 
 
 def disable_cms_plugin_signals(func):
+    # Skip this if we are using django CMS >= 3.6
+    if CMS_GTE_36:
+        return func
+
+    from cms.signals import (
+        pre_delete_plugins,
+        pre_save_plugins,
+        post_delete_plugins
+    )
     # The wrapped function NEEDS to set _no_reorder on any bound plugin instance
     # otherwise this does nothing because it only disconnects signals
     # for the cms.CMSPlugin class, not its subclasses

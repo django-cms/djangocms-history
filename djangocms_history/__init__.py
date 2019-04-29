@@ -1,2 +1,2 @@
-"""'Adds undo/redo functionality to django CMS'"""
-__version__ = '0.5.3'
+# -*- coding: utf-8 -*-
+__version__ = '1.0.0'

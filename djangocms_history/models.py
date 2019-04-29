@@ -1,14 +1,15 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import json
+
 import functools
+import json
 import operator
 
 from django.conf import settings
-from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.sites.models import Site
-from django.db import models
-from django.db import transaction
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db import models, transaction
 from django.db.models import Q
 from django.dispatch import receiver
 from django.utils import six
@@ -16,15 +17,10 @@ from django.utils import six
 from cms import operations
 from cms.models import Placeholder
 from cms.signals import (
-    pre_obj_operation,
-    pre_placeholder_operation,
-    post_placeholder_operation,
+    post_placeholder_operation, pre_obj_operation, pre_placeholder_operation,
 )
 
-from . import actions
-from . import action_handlers
-from . import operation_handlers
-from . import signals
+from . import action_handlers, actions, operation_handlers, signals
 from .datastructures import ArchivedPlugin
 
 
@@ -259,8 +255,8 @@ def update_placeholder_operation(sender, **kwargs):
     # Mark any operation from this user's session made on a separate path
     # or made on the current path but not applied as archived.
     p_operations.filter(
-        ~Q(origin=kwargs['origin'])
-        |Q(origin=kwargs['origin'], is_applied=False)
+        ~ Q(origin=kwargs['origin'])
+        | Q(origin=kwargs['origin'], is_applied=False)
     ).update(is_archived=True)
 
     # Last, mark any operation made by another user on the current path

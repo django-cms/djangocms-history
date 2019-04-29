@@ -1,0 +1,4 @@
+# other requirements
+djangocms-helper
+tox
+coverage
