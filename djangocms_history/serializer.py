@@ -1,6 +1,7 @@
+import json
 from django.core.serializers.python import Serializer as PythonSerializer
 from django.utils.encoding import is_protected_type
-import json
+
 
 class PythonSerializerWithDetectNestedJsonField(PythonSerializer):
     """
