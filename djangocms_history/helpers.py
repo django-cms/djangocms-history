@@ -10,10 +10,9 @@ from django.utils import timezone
 from cms.models import CMSPlugin
 from cms.utils import get_language_from_request
 
-from .serializer import PythonSerializerWithDetectNestedJsonField
 from .compat import CMS_GTE_36
 from .utils import get_plugin_fields, get_plugin_model
-
+from .serializer import PythonSerializerWithDetectNestedJsonField
 
 def delete_plugins(placeholder, plugin_ids, nested=True):
     # With plugins, we can't do queryset.delete()
