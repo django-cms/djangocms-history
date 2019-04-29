@@ -13,10 +13,9 @@ from cms.signals import (
     post_delete_plugins
 )
 from cms.utils import get_language_from_request
-
+from .serializer import PythonSerializerWithDetectNestedJsonField
 from .utils import get_plugin_fields, get_plugin_model
 
-from .serializer import  PythonSerializerWithDetectNestedJsonField
 
 def delete_plugins(placeholder, plugin_ids, nested=True):
     # With plugins, we can't do queryset.delete()
