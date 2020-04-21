@@ -1,4 +1,4 @@
 # other requirements
-djangocms-helper
+django-app-helper
 tox
 coverage

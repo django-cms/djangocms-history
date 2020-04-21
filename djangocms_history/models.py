@@ -12,13 +12,14 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models, transaction
 from django.db.models import Q
 from django.dispatch import receiver
-from django.utils import six
 
 from cms import operations
 from cms.models import Placeholder
 from cms.signals import (
     post_placeholder_operation, pre_obj_operation, pre_placeholder_operation,
 )
+
+import six
 
 from . import action_handlers, actions, operation_handlers, signals
 from .datastructures import ArchivedPlugin
