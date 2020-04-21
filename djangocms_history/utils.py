@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.utils.lru_cache import lru_cache
+from functools import lru_cache
 
 from cms.plugin_pool import plugin_pool
 
