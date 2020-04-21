@@ -3,6 +3,13 @@ Changelog
 =========
 
 
+1.2.0 (Unreleased)
+==================
+
+* Added support for Django 3.0
+* Added support for Python 3.8
+
+
 1.1.0 (2019-05-23)
 ==================
 
