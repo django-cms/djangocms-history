@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 try:
     from django.utils.lru_cache import lru_cache
-except ModuleNotFoundError:
+except ImportError:
     from functools import lru_cache
 
 from cms.plugin_pool import plugin_pool
