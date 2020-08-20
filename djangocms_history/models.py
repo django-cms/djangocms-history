@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
-
 import functools
 import json
 import operator
@@ -19,14 +16,11 @@ from cms.signals import (
     post_placeholder_operation, pre_obj_operation, pre_placeholder_operation,
 )
 
-import six
-
 from . import action_handlers, actions, operation_handlers, signals
 from .datastructures import ArchivedPlugin
 
 
 dump_json = functools.partial(json.dumps, cls=DjangoJSONEncoder)
-reduce = six.moves.reduce
 
 
 # TODO: This will likely change into a class based pool integration
@@ -169,7 +163,7 @@ def pre_page_operation_handler(sender, **kwargs):
         page = kwargs['obj']
         page_urls = (page.get_absolute_url(lang) for lang in page.get_languages())
         queries = [Q(origin__startswith=url) for url in page_urls]
-        p_operations = p_operations.filter(reduce(operator.or_, queries))
+        p_operations = p_operations.filter(functools.reduce(operator.or_, queries))
 
     # Both cms.Page and cms.StaticPlaceholder have a site field
     # the site field on cms.StaticPlaceholder is optional though.

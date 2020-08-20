@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 import json
 
 from django.urls import reverse
-from django.utils.translation import ugettext
+from django.utils.translation import gettext
 
 from cms.api import get_page_draft
 from cms.constants import REFRESH_PAGE
@@ -146,7 +145,7 @@ class UndoRedoToolbar(CMSToolbar):
         url = reverse('admin:djangocms_history_undo')
         disabled = not bool(self.active_operation)
         button = self._get_ajax_button(
-            name=ugettext('Undo'),
+            name=gettext('Undo'),
             url=url,
             icon=self.undo_icon,
             disabled=disabled,
@@ -158,7 +157,7 @@ class UndoRedoToolbar(CMSToolbar):
         url = reverse('admin:djangocms_history_redo')
         disabled = not bool(operation)
         button = self._get_ajax_button(
-            name=ugettext('Redo'),
+            name=gettext('Redo'),
             url=url,
             icon=self.redo_icon,
             disabled=disabled,

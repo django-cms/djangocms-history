@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-try:
-    from django.utils.lru_cache import lru_cache
-except ImportError:
-    from functools import lru_cache
+from functools import lru_cache
 
 from cms.plugin_pool import plugin_pool
 
