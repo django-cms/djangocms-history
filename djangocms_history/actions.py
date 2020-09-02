@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Actions are internal to djangocms-history
 A placeholder operation can have multiple actions.
@@ -10,9 +9,6 @@ Example:
         MOVE_OUT_PLUGIN -> Move plugin out of placeholder A
         MOVE_IN_PLUGIN -> Move plugin into placeholder B
 """
-from __future__ import unicode_literals
-
-
 ADD_PLUGIN = 'add_plugin'
 CHANGE_PLUGIN = 'change_plugin'
 DELETE_PLUGIN = 'delete_plugin'
