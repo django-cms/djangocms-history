@@ -140,10 +140,9 @@ def disable_cms_plugin_signals(func):
         return func
 
     from cms.signals import (
-        pre_delete_plugins,
-        pre_save_plugins,
-        post_delete_plugins
+        post_delete_plugins, pre_delete_plugins, pre_save_plugins,
     )
+
     # The wrapped function NEEDS to set _no_reorder on any bound plugin instance
     # otherwise this does nothing because it only disconnects signals
     # for the cms.CMSPlugin class, not its subclasses
