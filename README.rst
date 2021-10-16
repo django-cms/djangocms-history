@@ -16,23 +16,33 @@ history management was removed from django CMS in version 3.4 and has been spun 
 django CMS History has been rewritten from the ground up. It will continue to be developed. New functionality and
 improvements will be introduced in future releases.
 
+
+.. note:: 
+
+    This project is considered 3rd party (no supervision by the `django CMS Association <https://www.django-cms.org/en/about-us/>`_). Join us on `Slack                 <https://www.django-cms.org/slack/>`_ for more information.
+
 .. image:: preview.png
 
+*******************************************
+Contribute to this project and win rewards
+*******************************************
 
-Contributing
-============
+Because this is a an open-source project, we welcome everyone to
+`get involved in the project <https://www.django-cms.org/en/contribute/>`_ and
+`receive a reward <https://www.django-cms.org/en/bounty-program/>`_ for their contribution. 
+Become part of a fantastic community and help us make django CMS the best CMS in the world.   
 
-This is a an open-source project. We'll be delighted to receive your
+We'll be delighted to receive your
 feedback in the form of issues and pull requests. Before submitting your
 pull request, please review our `contribution guidelines
 <http://docs.django-cms.org/en/latest/contributing/index.html>`_.
 
 We're grateful to all contributors who have helped create and maintain this package.
-Contributors are listed at the `contributors <https://github.com/divio/djangocms-history/graphs/contributors>`_
+Contributors are listed at the `contributors <https://github.com/divio/djangocms-text-ckeditor/graphs/contributors>`_
 section.
 
 One of the easiest contributions you can make is helping to translate this addon on
-`Transifex <https://www.transifex.com/projects/p/djangocms-history/>`_.
+`Transifex <https://www.transifex.com/projects/p/djangocms-text-ckeditor/>`_.
 
 
 Documentation
