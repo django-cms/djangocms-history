@@ -2,10 +2,10 @@
 Changelog
 =========
 
-2.2.0 (2023-08-31)
+2.2.1 (2023-08-31)
 =================
-Support django dark mode starting with django CMS 3.11.4 (svandeneertwegh)
-
+* Support django dark mode starting with django CMS 3.11.4 (svandeneertwegh)
+* Fix: Unpin djang-treebeard
 
 2.1.0 (2022-08-19)
 ==================
