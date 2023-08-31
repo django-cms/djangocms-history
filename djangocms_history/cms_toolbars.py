@@ -141,7 +141,6 @@ class UndoRedoToolbar(CMSToolbar):
         operation = self.get_inactive_operation()
         url = reverse('admin:djangocms_history_redo')
         disabled = not bool(operation)
-        print()
         button = self._get_ajax_button(
             name=gettext('Redo'),
             url=url,
