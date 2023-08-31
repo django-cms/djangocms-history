@@ -4,7 +4,7 @@ Changelog
 
 2.2.0 (2023-08-31)
 =================
-This will support django dark mode starting with django CMS 3.11.4? (svandeneertwegh)
+Support django dark mode starting with django CMS 3.11.4 (svandeneertwegh)
 
 
 2.1.0 (2022-08-19)
