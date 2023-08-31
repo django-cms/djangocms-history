@@ -1,13 +1,16 @@
 import json
 
+from django.templatetags.static import static
+from django.urls import reverse
+from django.utils.translation import gettext
+
 from cms.api import get_page_draft
 from cms.constants import REFRESH_PAGE
 from cms.toolbar.items import BaseButton, ButtonList
 from cms.toolbar_base import CMSToolbar
 from cms.toolbar_pool import toolbar_pool
 from cms.utils.page_permissions import user_can_change_page
-from django.urls import reverse
-from django.utils.translation import gettext
+
 from sekizai.helpers import get_varname
 
 from .compat import CMS_GTE_36
@@ -15,7 +18,6 @@ from .helpers import (
     get_active_operation, get_inactive_operation, get_operations_from_request,
 )
 
-from django.templatetags.static import static
 
 class AjaxButton(BaseButton):
     template = 'djangocms_history/toolbar/ajax_button.html'
