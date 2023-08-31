@@ -1,15 +1,13 @@
 import json
 
-from django.urls import reverse
-from django.utils.translation import gettext
-
 from cms.api import get_page_draft
 from cms.constants import REFRESH_PAGE
 from cms.toolbar.items import BaseButton, ButtonList
 from cms.toolbar_base import CMSToolbar
 from cms.toolbar_pool import toolbar_pool
 from cms.utils.page_permissions import user_can_change_page
-
+from django.urls import reverse
+from django.utils.translation import gettext
 from sekizai.helpers import get_varname
 
 from .compat import CMS_GTE_36
@@ -17,6 +15,7 @@ from .helpers import (
     get_active_operation, get_inactive_operation, get_operations_from_request,
 )
 
+from django.templatetags.static import static
 
 class AjaxButton(BaseButton):
     template = 'djangocms_history/toolbar/ajax_button.html'
@@ -44,27 +43,13 @@ class AjaxButton(BaseButton):
 
 @toolbar_pool.register
 class UndoRedoToolbar(CMSToolbar):
-    undo_icon = (
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABOklEQVR4A'
-        'e3WNVZDQRhAYdyhimcBeMsG6CI1C8Dd9pK0rACXCm+QDoeaFnfnFlNNns4bnHvO10T/55Plsv/+i6ITM'
-        'zjCtXCAOfFeBJ5axCb80h+n8YA3G49IIwSl3oRtBBDHKd5cukBSeQDhGC94U/SCXvUBjO2gF9UoFWoxi'
-        'F2TIZI6BrhHF3JgVq4Y7sHgcIS8DnCEAJzUaDBESsch2IYfTuo1uDoiOs6BdTgp1+Cc6IBtqzYDLMBpg9J3p'
-        '/Gp1UoDHOBTK5MGuMKnViFfjn/uEAx95UmofBnKFaAKbuszuBGFVf58Ag9IgLzfip2WjzHpYTSIXIWH0TmCcF'
-        'UDXk0ex8OoRwXKUIchi8dxAkq1fMWCRK5JcUl2jgS0FMAInh0uSlPyMdc5SBdmsItLXGEfM+hwe6n99987pVTyg'
-        'pWk5ykAAAAASUVORK5CYII='
-    )
-    redo_icon = (
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABP0lEQVR42u'
-        '3WP0vDQBiAcSXoYMWtpcYPoFjd3R01rn4Alx40Q9vv0q5+AxGsbiKOuoharM7OQv8MVqzng3Q6Ei5vLmQ'
-        'xD/zGcC9ckruFoiJhPhSuMMBk7g0XUNhA5q2jiy9oiyk6xiBl3OMG4gKMoIU+cIAKnqABWSFm0CnN8A4NQ'
-        'NBRzOJ9NFFDCSvYRB0PtqEkez6M2NsGPMS1CIVP1wG6EYvvI0llDFwG8CPe9oZg8UfXLVARe+4hSXdZvAOX'
-        'xgNNJO3asvgtrL0aD20j18bGAKv/bgBzC2rILflLKM/9M3RP/iMKIW0Ly7Am/xXbCzDFedohqjGHUWjZDg8t'
-        '4zA6wxLEBYg7jlvYQQlr2EUbz9CGH+xhXv4XkhM4dYhhyivZMTKpKriUfuMUFWSejzp6eMEYI/TRg/pbuKhI0'
-        'C8BZPKBEtpCEgAAAABJRU5ErkJggg=='
-    )
-
     # django CMS 3.4 compatibility
     icon_css = '<style>.cms-btn-disabled img {opacity: 0.2;}</style>'
+
+    class Media:
+        css = {
+            'all': [static('djangocms_history/color_mode.css')]
+        }
 
     @property
     def request_path(self):
@@ -135,7 +120,7 @@ class UndoRedoToolbar(CMSToolbar):
             name=name,
             url=url,
             data=data,
-            icon=icon,
+            icon='',
             active=False,
             disabled=disabled,
         )
@@ -147,7 +132,7 @@ class UndoRedoToolbar(CMSToolbar):
         button = self._get_ajax_button(
             name=gettext('Undo'),
             url=url,
-            icon=self.undo_icon,
+            icon='',
             disabled=disabled,
         )
         return button
@@ -156,10 +141,11 @@ class UndoRedoToolbar(CMSToolbar):
         operation = self.get_inactive_operation()
         url = reverse('admin:djangocms_history_redo')
         disabled = not bool(operation)
+        print()
         button = self._get_ajax_button(
             name=gettext('Redo'),
             url=url,
-            icon=self.redo_icon,
+            icon='',
             disabled=disabled,
         )
         return button
