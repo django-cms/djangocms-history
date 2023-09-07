@@ -1,9 +1,6 @@
 <a href="{{ url }}" data-rel="ajax" data-post="{{ data }}" class="cms-btn{% if active %} cms-btn-active{% endif %}{% if disabled %} cms-btn-disabled{% endif %}" data-on-success="{{ on_success }}">
     <span>
-        <img
-            aria-hidden="true" style="vertical-align: text-bottom" class="{{ classes }}"
-            width="16" height="16" src="{{ icon }}" alt="{{ name }}"
-            title="{{ name }}">
+        <div class="history-button {{ button_type }} {% if disabled %}disabled{% endif %}"></div>
         <span class="cms-hidden" style="display: none;">{{ name }}</span>
     </span>
 </a>
