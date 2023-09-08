@@ -6,6 +6,7 @@ Changelog
 ==================
 
 * Fix: allow undo/redo for plugins that use django-entangled reference conventions
+* Fix: Some browsers showed a "borken image" in the undo/redo buttons  (svandeneertwegh)
 
 2.2.2 (2023-08-31)
 =================
