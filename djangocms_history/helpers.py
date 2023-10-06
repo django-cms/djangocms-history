@@ -2,7 +2,6 @@ from collections import defaultdict
 from datetime import timedelta
 
 from django.contrib.sites.models import Site
-from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import signals
 from django.utils import timezone
@@ -11,6 +10,7 @@ from cms.models import CMSPlugin
 from cms.utils import get_language_from_request
 
 from .compat import CMS_GTE_36
+from .serializer import PythonSerializerWithDetectNestedJsonField
 from .utils import get_plugin_fields, get_plugin_model
 
 
@@ -68,9 +68,15 @@ def get_plugin_data(plugin, only_meta=False):
     if only_meta:
         custom_data = None
     else:
+        serializers = PythonSerializerWithDetectNestedJsonField()
         plugin_fields = get_plugin_fields(plugin.plugin_type)
-        _plugin_data = serializers.serialize('python', (plugin,), fields=plugin_fields)[0]
-        custom_data = _plugin_data['fields']
+        _plugin_data = serializers.serialize((plugin,), fields=plugin_fields)[0]
+        if 'fields' in _plugin_data:
+            custom_data = _plugin_data['fields']
+        elif 'fields' in _plugin_data[0]:
+            custom_data = _plugin_data[0]['fields']
+        else:
+            custom_data = _plugin_data
 
     plugin_data = {
         'pk': plugin.pk,
