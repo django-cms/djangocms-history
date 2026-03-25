@@ -4,7 +4,9 @@ from django.views.generic import DetailView
 
 from .forms import UndoRedoForm
 from .helpers import (
-    get_active_operation, get_inactive_operation, get_operations_from_request,
+    get_active_operation,
+    get_inactive_operation,
+    get_operations_from_request,
 )
 from .models import PlaceholderOperation
 
@@ -12,7 +14,7 @@ from .models import PlaceholderOperation
 class UndoRedoView(DetailView):
     action = None
     model = PlaceholderOperation
-    http_method_names = ['post']
+    http_method_names = ["post"]
     form_class = UndoRedoForm
 
     def post(self, request, *args, **kwargs):
@@ -24,14 +26,14 @@ class UndoRedoView(DetailView):
         self.form = self.form_class(request.POST)
 
         if not self.form.is_valid():
-            return HttpResponseBadRequest('No operation found')
+            return HttpResponseBadRequest("No operation found")
 
         self.object = self.get_object()
 
         if not self.object:
-            return HttpResponseBadRequest('No operation found')
+            return HttpResponseBadRequest("No operation found")
 
-        if self.action == 'undo':
+        if self.action == "undo":
             self.object.undo()
         else:
             self.object.redo()
@@ -41,7 +43,7 @@ class UndoRedoView(DetailView):
         if queryset is None:
             queryset = self.get_queryset()
 
-        if self.action == 'undo':
+        if self.action == "undo":
             operation = get_active_operation(queryset)
         else:
             operation = get_inactive_operation(queryset)
@@ -51,11 +53,11 @@ class UndoRedoView(DetailView):
         data = self.form.cleaned_data
         queryset = get_operations_from_request(
             self.request,
-            path=data['cms_path'],
-            language=data['language'],
+            path=data["cms_path"],
+            language=data["language"],
         )
         return queryset
 
 
-undo = UndoRedoView.as_view(action='undo')
-redo = UndoRedoView.as_view(action='redo')
+undo = UndoRedoView.as_view(action="undo")
+redo = UndoRedoView.as_view(action="redo")
