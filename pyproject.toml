@@ -1,0 +1,84 @@
+[build-system]
+requires = [ "setuptools>=61.0" ]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "djangocms-history"
+dynamic = ["version"]
+description = "Adds undo/redo functionality to django CMS"
+readme = "README.rst"
+license = "BSD-3-Clause"
+requires-python = ">=3.5"
+authors = [
+    {name = "Divio AG", email = "info@divio.ch"}
+]
+maintainers = [
+    {name = "Django CMS Association and contributors", email = "info@django-cms.org"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Framework :: Django",
+    "Framework :: Django :: 2.2",
+    "Framework :: Django :: 3.0",
+    "Framework :: Django :: 3.1",
+    "Framework :: Django CMS",
+    "Framework :: Django CMS :: 3.7",
+    "Framework :: Django CMS :: 3.8",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "django-cms>=3.7,<3.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/django-cms/djangocms-history"
+Repository = "https://github.com/django-cms/djangocms-history"
+Issues = "https://github.com/django-cms/djangocms-history"
+
+[tool.setuptools.dynamic]
+version = {attr = "djangocms_history.__version__"}
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = [ "." ]
+
+[tool.setuptools.package-data]
+"*" = [
+    "templates/**/*.html",
+    "static/**/*",
+    "locale/**/*",
+    "*.po",
+    "*.mo",
+]
+
+[tool.black]
+line-length = 119
+target-version = [ "py35" ]
+
+[tool.ruff]
+target-version = "py37"
+line-length = 119
+exclude = [ "djangocms_history/migrations", "tests/fixtures" ]
+
+[tool.ruff.lint]
+select = ["I"]
+mccabe.max-complexity = 5
+ignore = []
+
+[tool.isort]
+line_length = 119
+known_first_party = ["djangocms_history"]
