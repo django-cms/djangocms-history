@@ -52,12 +52,13 @@ version = {attr = "djangocms_history.__version__"}
 
 [tool.setuptools]
 zip-safe = false
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = [ "." ]
 
 [tool.setuptools.package-data]
-"*" = [
+"djangocms_history" = [
     "templates/**/*.html",
     "static/**/*",
     "locale/**/*",
