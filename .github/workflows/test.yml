@@ -17,7 +17,7 @@ jobs:
           dj31_cms38.txt,
         ]
         os: [
-          ubuntu-20.04,
+          ubuntu-24.04,
         ]
 
     steps:
