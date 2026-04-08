@@ -26,7 +26,7 @@ jobs:
           pip install -e .
 
       - name: Run coverage
-        run: coverage run setup.py test
+        run: coverage run test/settings.py test
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v6
