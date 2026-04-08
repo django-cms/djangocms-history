@@ -4,11 +4,7 @@ import operator
 
 from cms import operations
 from cms.models import Placeholder
-from cms.signals import (
-    post_placeholder_operation,
-    pre_obj_operation,
-    pre_placeholder_operation,
-)
+from cms.signals import post_placeholder_operation, pre_obj_operation, pre_placeholder_operation
 from django.conf import settings
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.sites.models import Site

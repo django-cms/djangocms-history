@@ -12,11 +12,7 @@ from django.utils.translation import gettext
 from sekizai.helpers import get_varname
 
 from .compat import CMS_GTE_36
-from .helpers import (
-    get_active_operation,
-    get_inactive_operation,
-    get_operations_from_request,
-)
+from .helpers import get_active_operation, get_inactive_operation, get_operations_from_request
 
 
 class AjaxButton(BaseButton):

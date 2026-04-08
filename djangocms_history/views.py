@@ -3,11 +3,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.generic import DetailView
 
 from .forms import UndoRedoForm
-from .helpers import (
-    get_active_operation,
-    get_inactive_operation,
-    get_operations_from_request,
-)
+from .helpers import get_active_operation, get_inactive_operation, get_operations_from_request
 from .models import PlaceholderOperation
 
 
