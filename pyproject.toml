@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "setuptools>=61.0" ]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,12 +8,10 @@ dynamic = ["version"]
 description = "Adds undo/redo functionality to django CMS"
 readme = "README.rst"
 license = "BSD-3-Clause"
-requires-python = ">=3.5"
-authors = [
-    {name = "Divio AG", email = "info@divio.ch"}
-]
+requires-python = ">=3.10"
+authors = [{ name = "Divio AG", email = "info@divio.ch" }]
 maintainers = [
-    {name = "Django CMS Association and contributors", email = "info@django-cms.org"}
+    { name = "Django CMS Association and contributors", email = "info@django-cms.org" },
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -22,25 +20,22 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.5",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Framework :: Django",
-    "Framework :: Django :: 2.2",
-    "Framework :: Django :: 3.0",
-    "Framework :: Django :: 3.1",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.2",
     "Framework :: Django CMS",
-    "Framework :: Django CMS :: 3.7",
-    "Framework :: Django CMS :: 3.8",
+    "Framework :: Django CMS :: 3.11",
+    "Framework :: Django CMS :: 4.1",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
     "Topic :: Software Development",
     "Topic :: Software Development :: Libraries",
 ]
-dependencies = [
-    "django-cms>=3.7,<3.9",
-]
+dependencies = ["django>=3.2,<4.3", "django-cms>=3.11,<4.0"]
+
 
 [project.urls]
 Homepage = "https://github.com/django-cms/djangocms-history"
@@ -48,14 +43,14 @@ Repository = "https://github.com/django-cms/djangocms-history"
 Issues = "https://github.com/django-cms/djangocms-history"
 
 [tool.setuptools.dynamic]
-version = {attr = "djangocms_history.__version__"}
+version = { attr = "djangocms_history.__version__" }
 
 [tool.setuptools]
 zip-safe = false
 include-package-data = true
 
 [tool.setuptools.packages.find]
-where = [ "." ]
+where = ["."]
 
 [tool.setuptools.package-data]
 "djangocms_history" = [
@@ -66,14 +61,10 @@ where = [ "." ]
     "*.mo",
 ]
 
-[tool.black]
-line-length = 119
-target-version = [ "py35" ]
-
 [tool.ruff]
-target-version = "py37"
+target-version = "py310"
 line-length = 119
-exclude = [ "djangocms_history/migrations", "tests/fixtures" ]
+exclude = ["djangocms_history/migrations", "tests/fixtures"]
 
 [tool.ruff.lint]
 select = ["I"]
