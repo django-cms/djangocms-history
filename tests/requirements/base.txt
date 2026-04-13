@@ -1,4 +1,6 @@
 #other requirements
-django-app-helper
+pytest
+pytest-django
 tox
 coverage
+-e .
