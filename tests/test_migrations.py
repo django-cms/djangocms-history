@@ -4,6 +4,7 @@ import pytest
 from django.core.management import call_command
 
 
+@pytest.mark.django_db
 def test_no_missing_migrations():
     """
     Checks if there are any changes in models that aren't reflected in migrations.

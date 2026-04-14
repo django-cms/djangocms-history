@@ -34,7 +34,7 @@ classifiers = [
     "Topic :: Software Development",
     "Topic :: Software Development :: Libraries",
 ]
-dependencies = ["django>=3.2,<4.3", "django-cms>=3.11,<5.0"]
+dependencies = ["django>=3.2,<4.3", "django-cms>=3.11,<4.0"]
 
 optional-dependencies.test = ["pytest", "pytest-django"]
 
@@ -79,7 +79,6 @@ known_first_party = ["djangocms_history"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"
-addopts = ["--nomigrations"]
 python_files = ["tests.py", "test_*.py"]
 testpaths = ["tests"]
 pythonpath = ["."]
