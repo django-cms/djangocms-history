@@ -1,7 +1,6 @@
 from django.test import override_settings
 
 from cms import operations
-from cms.signals import pre_obj_operation
 
 from djangocms_history.datastructures import ArchivedPlugin
 from djangocms_history.models import PlaceholderOperation
@@ -78,86 +77,6 @@ class ArchiveOnLoginTestCase(HistoryTestCase):
 
         operation.refresh_from_db()
         self.assertTrue(operation.is_archived)
-
-
-class PageOperationTestCase(HistoryTestCase):
-
-    def record_operation(self):
-        with self.login_user_context(self.superuser):
-            self.add_plugin_via_endpoint()
-        return self.latest_operation()
-
-    @override_settings(DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS=True)
-    def test_page_operation_archives_page_operations(self):
-        operation = self.record_operation()
-
-        pre_obj_operation.send(
-            sender=self.__class__,
-            operation=operations.DELETE_PAGE,
-            obj=self.page,
-        )
-
-        operation.refresh_from_db()
-        self.assertTrue(operation.is_archived)
-
-    def test_page_operation_does_not_archive_other_pages(self):
-        operation = self.record_operation()
-        other_page, _ = self.create_other_page()
-
-        pre_obj_operation.send(
-            sender=self.__class__,
-            operation=operations.DELETE_PAGE,
-            obj=other_page,
-        )
-
-        operation.refresh_from_db()
-        self.assertFalse(operation.is_archived)
-
-    @override_settings(DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS=True)
-    def test_translation_operation_archives_translation_only(self):
-        en_operation = self.record_operation()
-
-        translation = self.page_content  # the English page content
-
-        pre_obj_operation.send(
-            sender=self.__class__,
-            operation=operations.DELETE_PAGE_TRANSLATION,
-            obj=self.page,
-            translation=translation,
-        )
-
-        en_operation.refresh_from_db()
-        self.assertTrue(en_operation.is_archived)
-
-    def test_translation_operation_other_language_untouched(self):
-        en_operation = self.record_operation()
-
-        from cms.api import create_page_content
-
-        de_translation = create_page_content('de', 'startseite', self.page)
-
-        pre_obj_operation.send(
-            sender=self.__class__,
-            operation=operations.DELETE_PAGE_TRANSLATION,
-            obj=self.page,
-            translation=de_translation,
-        )
-
-        en_operation.refresh_from_db()
-        self.assertFalse(en_operation.is_archived)
-
-    def test_operation_signal_without_obj_does_not_crash(self):
-        operation = self.record_operation()
-
-        # ADD_PAGE_TRANSLATION is sent by the cms without an obj kwarg
-        pre_obj_operation.send(
-            sender=self.__class__,
-            operation=operations.ADD_PAGE_TRANSLATION,
-            language='de',
-        )
-
-        operation.refresh_from_db()
-        self.assertFalse(operation.is_archived)
 
 
 class IsEditableTestCase(HistoryTestCase):

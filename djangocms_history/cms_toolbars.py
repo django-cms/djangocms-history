@@ -4,7 +4,6 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.translation import gettext
 
-from cms.constants import REFRESH_PAGE
 from cms.toolbar.items import BaseButton, ButtonList
 from cms.toolbar_base import CMSToolbar
 from cms.toolbar_pool import toolbar_pool
@@ -26,7 +25,6 @@ class AjaxButton(BaseButton):
         self.active = active
         self.disabled = disabled
         self.data = data
-        self.on_success = REFRESH_PAGE
         self.icon = icon
         self.button_type = button_type
 
@@ -38,7 +36,6 @@ class AjaxButton(BaseButton):
             'disabled': self.disabled,
             'data': json.dumps(self.data),
             'url': self.url,
-            'on_success': self.on_success,
             'button_type': self.button_type,
         }
 

@@ -1,14 +1,56 @@
 from collections import defaultdict
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
+from django.urls import Resolver404, resolve
 from django.utils import timezone
 
 from cms.utils import get_language_from_request
 
 from .utils import get_plugin_fields, get_plugin_model
+
+# The CMS object endpoints (edit / preview / structure) all render the same
+# editable object. They live at different URLs, and the structure board even
+# rewrites the browser path to the structure URL (history.replaceState), so an
+# operation's recorded path depends on which mode it was performed in.
+OBJECT_ENDPOINT_URL_NAMES = {
+    'cms_placeholder_render_object_edit',
+    'cms_placeholder_render_object_preview',
+    'cms_placeholder_render_object_structure',
+}
+
+
+def get_operation_origin(path):
+    """
+    Canonicalises an operation origin so that the edit, preview and structure
+    endpoints of the same object all map to a single value of the form
+    ``"<content_type_id>:<object_id>"``.
+
+    Falls back to the plain request path for anything that is not a CMS object
+    endpoint (e.g. legacy/static placeholder editing), preserving the previous
+    behaviour for those cases.
+    """
+    path = urlparse(path).path
+
+    try:
+        match = resolve(path)
+    except Resolver404:
+        return path
+
+    if match.url_name in OBJECT_ENDPOINT_URL_NAMES:
+        # The object endpoints capture (content_type_id, object_id). They use
+        # positional groups, but fall back to named kwargs to be safe.
+        if len(match.args) >= 2:
+            content_type_id, object_id = match.args[0], match.args[1]
+        else:
+            content_type_id = match.kwargs.get('content_type_id')
+            object_id = match.kwargs.get('object_id')
+        if content_type_id and object_id:
+            return '{}:{}'.format(content_type_id, object_id)
+    return path
 
 
 def delete_plugins(placeholder, plugin_ids):
@@ -98,7 +140,7 @@ def get_operations_from_request(request, path=None, language=None):
     if not language:
         language = get_language_from_request(request)
 
-    origin = path or request.path
+    origin = get_operation_origin(path or request.path)
 
     # This is controversial :/
     # By design, we don't let undo/redo span longer than a day.

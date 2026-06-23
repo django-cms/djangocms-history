@@ -247,11 +247,13 @@ class HistoryTestCase(CMSTestCase):
         }
         return self.client.post(endpoint, data)
 
-    def undo(self, language='en', path=None):
-        response = self.post_undo(language, path)
-        self.assertEqual(
-            response.status_code, 204,
-            'undo failed: {} / operations: {}'.format(
+    def _assert_undo_redo_ok(self, response, label):
+        # A successful undo/redo returns either an empty 204 or, when the
+        # result is a single plugin add/edit, the plugin's close frame (200).
+        self.assertIn(
+            response.status_code, (200, 204),
+            '{} failed: {} / operations: {}'.format(
+                label,
                 response.content,
                 list(PlaceholderOperation.objects.values(
                     'pk', 'operation_type', 'origin', 'language',
@@ -260,15 +262,10 @@ class HistoryTestCase(CMSTestCase):
             ),
         )
 
+    def undo(self, language='en', path=None):
+        response = self.post_undo(language, path)
+        self._assert_undo_redo_ok(response, 'undo')
+
     def redo(self, language='en', path=None):
         response = self.post_redo(language, path)
-        self.assertEqual(
-            response.status_code, 204,
-            'redo failed: {} / operations: {}'.format(
-                response.content,
-                list(PlaceholderOperation.objects.values(
-                    'pk', 'operation_type', 'origin', 'language',
-                    'is_applied', 'is_archived',
-                )),
-            ),
-        )
+        self._assert_undo_redo_ok(response, 'redo')

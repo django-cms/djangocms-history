@@ -1,6 +1,5 @@
 import functools
 import json
-import operator
 
 from django.conf import settings
 from django.contrib.auth.signals import user_logged_in
@@ -12,14 +11,11 @@ from django.dispatch import receiver
 
 from cms import operations
 from cms.models import Placeholder
-from cms.signals import (
-    post_placeholder_operation,
-    pre_obj_operation,
-    pre_placeholder_operation,
-)
+from cms.signals import post_placeholder_operation, pre_placeholder_operation
 
 from . import action_handlers, actions, operation_handlers, signals
 from .datastructures import ArchivedPlugin
+from .helpers import get_operation_origin
 
 dump_json = functools.partial(json.dumps, cls=DjangoJSONEncoder)
 
@@ -158,47 +154,12 @@ def archive_old_operations(sender, request, user, **kwargs):
     archive_or_delete_operations(p_operations)
 
 
-@receiver(pre_obj_operation)
-def pre_page_operation_handler(sender, **kwargs):
-    operation_type = kwargs['operation']
-
-    if 'obj' not in kwargs:
-        # Some page operations (e.g. ADD_PAGE_TRANSLATION) are sent
-        # without the object they operate on. There's nothing to
-        # archive in that case.
-        return
-
-    p_operations = PlaceholderOperation.objects.all()
-
-    if operation_type in operations.PAGE_TRANSLATION_OPERATIONS:
-        # Fetch all operations which act on the translation only
-        page = kwargs['obj']
-        translation = kwargs['translation']
-        page_urls = (page.get_absolute_url(lang) for lang in page.get_languages())
-        p_operations = p_operations.filter(
-            origin__in=page_urls,
-            language=translation.language,
-        )
-    else:
-        # Fetch all operations which act on a page including its children
-        # for all languages of the page
-        page = kwargs['obj']
-        page_urls = (page.get_absolute_url(lang) for lang in page.get_languages())
-        queries = [Q(origin__startswith=url) for url in page_urls]
-        p_operations = p_operations.filter(functools.reduce(operator.or_, queries))
-
-    # django CMS 4.1 stores the site on the page's tree node,
-    # django CMS 5+ stores it on the page itself.
-    try:
-        site_id = kwargs['obj'].node.site_id
-    except AttributeError:
-        site_id = kwargs['obj'].site_id
-
-    if site_id:
-        p_operations = p_operations.filter(site=site_id)
-
-    # Retire all fetched operations
-    archive_or_delete_operations(p_operations)
+# Note: operations are intentionally NOT retired when a page is moved, deleted
+# or its translation removed. A move does not invalidate a placeholder's plugin
+# history; a delete cascades to the placeholders (and therefore the recorded
+# actions), leaving at most a harmless action-less operation; and any leftover
+# becomes unreachable after the 24h undo window in any case. The previous
+# pre_obj_operation handler also no longer worked with canonical object origins.
 
 
 @receiver(pre_placeholder_operation)
@@ -225,7 +186,7 @@ def create_placeholder_operation(sender, **kwargs):
     operation = PlaceholderOperation.objects.create(
         operation_type=operation_type,
         token=kwargs['token'],
-        origin=kwargs['origin'],
+        origin=get_operation_origin(kwargs['origin']),
         language=language,
         user=request.user,
         user_session_key=request.session.session_key,
@@ -254,6 +215,7 @@ def update_placeholder_operation(sender, **kwargs):
         return
 
     site = Site.objects.get_current(request)
+    origin = get_operation_origin(kwargs['origin'])
 
     p_operations = PlaceholderOperation.objects.filter(
         site=site,
@@ -269,23 +231,23 @@ def update_placeholder_operation(sender, **kwargs):
     # Mark the new operation as applied
     p_operations.filter(pk=operation.pk).update(is_applied=True)
 
-    # Retire any operation from this user's session made on a separate path
-    # or made on the current path but not applied.
+    # Retire any operation from this user's session made on a separate origin
+    # or made on the current origin but not applied.
     archive_or_delete_operations(
         p_operations.filter(
-            ~ Q(origin=kwargs['origin'])
-            | Q(origin=kwargs['origin'], is_applied=False)
+            ~ Q(origin=origin)
+            | Q(origin=origin, is_applied=False)
         )
     )
 
-    # Last, retire any operation made by another user on the current path.
+    # Last, retire any operation made by another user on the current origin.
     # TODO: This will need to change to allow for concurrent editing
     # Its actually better to get the affected placeholders
     # and archive any operations that contains those
     foreign_operations = (
         PlaceholderOperation
         .objects
-        .filter(origin=kwargs['origin'], site=site)
+        .filter(origin=origin, site=site)
         .exclude(user=request.user)
      )
     archive_or_delete_operations(foreign_operations)
@@ -367,6 +329,65 @@ class PlaceholderOperation(models.Model):
             action.placeholder.check_source(user)
             for action in self.actions.select_related('placeholder')
         )
+
+    #: Operation types that center on a single plugin subtree. After an
+    #: undo/redo the resulting state can be reflected to the frontend as the
+    #: plugin's "add" or "edit" close frame (the data bridge), provided the
+    #: plugin still exists (e.g. an undone "add" deletes the plugin, so there
+    #: is nothing to render).
+    CLOSE_FRAME_ACTIONS = {
+        operations.ADD_PLUGIN: 'add',
+        operations.CHANGE_PLUGIN: 'edit',
+        operations.DELETE_PLUGIN: 'add',
+        operations.PASTE_PLUGIN: 'add',
+    }
+
+    def get_close_frame_target(self):
+        """
+        For single-plugin operations, returns ``(action, plugin_id)`` where
+        ``action`` is ``'add'`` or ``'edit'`` and ``plugin_id`` is the plugin
+        the operation centers on. Returns ``None`` for operations that don't
+        map to a single plugin (move, cut, clear, paste placeholder, ...).
+
+        The caller must still verify the plugin exists after the replay: for
+        an undone "add" (or redone "delete"/"paste") the plugin is gone, which
+        is not an add/edit and should fall back to a plain reload.
+        """
+        action = self.CLOSE_FRAME_ACTIONS.get(self.operation_type)
+
+        if action is None:
+            return None
+
+        operation_action = self.actions.first()
+
+        if operation_action is None:
+            return None
+
+        for data in (
+            operation_action.get_post_action_data(),
+            operation_action.get_pre_action_data(),
+        ):
+            if data and data.get('plugins'):
+                return action, data['plugins'][0].pk
+        return None
+
+    def get_move_plugin_id(self):
+        """
+        For a move operation, returns the id of the moved plugin (read from
+        the stored action data, which records it for both same-placeholder
+        and cross-placeholder moves). Returns ``None`` for other operations.
+        """
+        if self.operation_type != operations.MOVE_PLUGIN:
+            return None
+
+        for operation_action in self.actions.all():
+            for data in (
+                operation_action.get_pre_action_data(),
+                operation_action.get_post_action_data(),
+            ):
+                if data and data.get('plugins'):
+                    return data['plugins'][0].pk
+        return None
 
     @transaction.atomic
     def undo(self):
