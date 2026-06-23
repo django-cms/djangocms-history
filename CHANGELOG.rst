@@ -16,6 +16,12 @@ Changelog
   djangocms-versioning installed, this prevents operations recorded on a
   draft from corrupting the version after it has been published; the
   toolbar buttons are disabled accordingly.
+* Operations that are retired from undo/redo (superseded or expired) are now
+  **deleted** by default instead of being kept forever with
+  ``is_archived=True``. Set ``DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS = True`` to
+  restore the previous archiving behaviour.
+* Added a ``purge_archived_operations`` management command to delete archived
+  operations (supports ``--days`` and ``--dry-run``).
 * The undo/redo replay logic was rewritten for the position-based plugin
   tree of django CMS 4/5 and no longer relies on the (unreliable) order
   data sent by the placeholder operation signals

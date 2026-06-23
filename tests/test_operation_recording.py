@@ -1,3 +1,5 @@
+from django.test import override_settings
+
 from cms import operations
 
 from djangocms_history import actions
@@ -294,6 +296,7 @@ class OperationRecordingTestCase(HistoryTestCase):
 
         self.assertEqual(PlaceholderOperation.objects.count(), 0)
 
+    @override_settings(DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS=True)
     def test_new_operation_archives_operations_on_other_paths(self):
         other_page, other_placeholder = self.create_other_page()
 
@@ -305,6 +308,7 @@ class OperationRecordingTestCase(HistoryTestCase):
         first.refresh_from_db()
         self.assertTrue(first.is_archived)
 
+    @override_settings(DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS=True)
     def test_operation_by_other_user_archives_existing(self):
         with self.login_user_context(self.superuser):
             self.add_plugin_via_endpoint()

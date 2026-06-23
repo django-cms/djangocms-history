@@ -118,10 +118,29 @@ _action_handlers = {
 }
 
 
+def archive_or_delete_operations(queryset):
+    """
+    Retires the given operations from the undo/redo system.
+
+    Archived operations are never reconsidered for undo/redo
+    (``get_operations_from_request`` filters out ``is_archived=True`` rows),
+    so by default they are deleted outright, together with their actions.
+
+    Set ``DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS = True`` to keep them in the
+    database with ``is_archived=True`` instead (e.g. for auditing). Such rows
+    can later be removed with the ``purge_archived_operations`` management
+    command.
+    """
+    if getattr(settings, 'DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS', False):
+        queryset.update(is_archived=True)
+    else:
+        queryset.delete()
+
+
 @receiver(user_logged_in, dispatch_uid='archive_old_operations')
 def archive_old_operations(sender, request, user, **kwargs):
     """
-    Archives all user operations that don't match the new user session
+    Retires all of the user's operations that don't match the new session.
     """
     site = Site.objects.get_current(request)
 
@@ -136,7 +155,7 @@ def archive_old_operations(sender, request, user, **kwargs):
         .filter(user=request.user, site=site)
         .exclude(user_session_key=request.session.session_key)
     )
-    p_operations.update(is_archived=True)
+    archive_or_delete_operations(p_operations)
 
 
 @receiver(pre_obj_operation)
@@ -178,8 +197,8 @@ def pre_page_operation_handler(sender, **kwargs):
     if site_id:
         p_operations = p_operations.filter(site=site_id)
 
-    # Archive all fetched operations
-    p_operations.update(is_archived=True)
+    # Retire all fetched operations
+    archive_or_delete_operations(p_operations)
 
 
 @receiver(pre_placeholder_operation)
@@ -250,15 +269,16 @@ def update_placeholder_operation(sender, **kwargs):
     # Mark the new operation as applied
     p_operations.filter(pk=operation.pk).update(is_applied=True)
 
-    # Mark any operation from this user's session made on a separate path
-    # or made on the current path but not applied as archived.
-    p_operations.filter(
-        ~ Q(origin=kwargs['origin'])
-        | Q(origin=kwargs['origin'], is_applied=False)
-    ).update(is_archived=True)
+    # Retire any operation from this user's session made on a separate path
+    # or made on the current path but not applied.
+    archive_or_delete_operations(
+        p_operations.filter(
+            ~ Q(origin=kwargs['origin'])
+            | Q(origin=kwargs['origin'], is_applied=False)
+        )
+    )
 
-    # Last, mark any operation made by another user on the current path
-    # as archived.
+    # Last, retire any operation made by another user on the current path.
     # TODO: This will need to change to allow for concurrent editing
     # Its actually better to get the affected placeholders
     # and archive any operations that contains those
@@ -268,7 +288,7 @@ def update_placeholder_operation(sender, **kwargs):
         .filter(origin=kwargs['origin'], site=site)
         .exclude(user=request.user)
      )
-    foreign_operations.update(is_archived=True)
+    archive_or_delete_operations(foreign_operations)
 
 
 class PlaceholderOperation(models.Model):

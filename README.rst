@@ -2,7 +2,7 @@
 django CMS History
 ==================
 
-|pypi| |build| |coverage|
+|pypi| |coverage| |python| |django| |djangocms|
 
 **django CMS History** is an addon application to provide undo/redo functionality in `django CMS
 <https://django-cms.org/>`_, by maintaining content history.
@@ -56,9 +56,9 @@ Version support
 djangocms-history 3.x supports django CMS 4.1 and later. If you are using
 django CMS 3.x, use djangocms-history 2.x.
 
-* Python: 3.9 - 3.13
-* Django: 4.2 - 5.2
-* django CMS: 4.1, 5.x
+The supported Python, Django and django CMS versions are shown by the
+|python|, |django| and |djangocms| badges at the top of this page (read
+directly from the published PyPI classifiers).
 
 Installation
 ------------
@@ -82,6 +82,28 @@ Configuration
 
 Once installed, django CMS History will make new options available to the web content manager. These will be visible in
 the django CMS toolbar when managing content that is supported by the application.
+
+Retiring operations: archive or delete
+......................................
+
+Undo/redo is only available for a limited time (the last 24 hours). Once an
+operation falls out of that window or is superseded — for example by an edit
+on another page, by another user, or by a new editing session — it is retired
+from the undo/redo system and is never reconsidered again.
+
+By default such operations are **deleted** outright, keeping the history
+tables small. If you would rather keep them (e.g. for auditing), enable
+archiving::
+
+    DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS = True
+
+Archived operations are flagged with ``is_archived=True`` and are still never
+used by undo/redo. To remove them later and reclaim database space, run::
+
+    python manage.py purge_archived_operations
+
+The command supports ``--days N`` (only purge archived operations older than
+``N`` days) and ``--dry-run`` (report what would be deleted without deleting).
 
 djangocms-versioning
 --------------------
@@ -111,14 +133,15 @@ Run with djangocms-versioning installed::
 
 .. |pypi| image:: https://badge.fury.io/py/djangocms-history.svg
     :target: http://badge.fury.io/py/djangocms-history
-.. |build| image:: https://travis-ci.org/divio/djangocms-history.svg?branch=master
-    :target: https://travis-ci.org/divio/djangocms-history
-.. |coverage| image:: https://codecov.io/gh/divio/djangocms-history/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/divio/djangocms-history
+.. |coverage| image:: https://codecov.io/gh/django-cms/djangocms-history/graph/badge.svg
+    :target: https://codecov.io/gh/django-cms/djangocms-history
 
-.. |python| image:: https://img.shields.io/badge/python-3.9+-blue.svg
+.. |python| image:: https://img.shields.io/pypi/pyversions/djangocms-history
+    :alt: PyPI - Python Version
     :target: https://pypi.org/project/djangocms-history/
-.. |django| image:: https://img.shields.io/badge/django-4.2%20--%205.2-blue.svg
+.. |django| image:: https://img.shields.io/pypi/frameworkversions/django/djangocms-history
+    :alt: PyPI - Django Versions from Framework Classifiers
     :target: https://www.djangoproject.com/
-.. |djangocms| image:: https://img.shields.io/badge/django%20CMS-4.1%2B-blue.svg
+.. |djangocms| image:: https://img.shields.io/pypi/frameworkversions/django-cms/djangocms-history
+    :alt: PyPI - django CMS Versions from Framework Classifiers
     :target: https://www.django-cms.org/

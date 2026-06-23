@@ -1,3 +1,5 @@
+from django.test import override_settings
+
 from cms import operations
 from cms.signals import pre_obj_operation
 
@@ -45,6 +47,7 @@ class ActionDataTestCase(HistoryTestCase):
 
 class ArchiveOnLoginTestCase(HistoryTestCase):
 
+    @override_settings(DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS=True)
     def test_new_session_archives_previous_operations(self):
         from importlib import import_module
 
@@ -84,6 +87,7 @@ class PageOperationTestCase(HistoryTestCase):
             self.add_plugin_via_endpoint()
         return self.latest_operation()
 
+    @override_settings(DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS=True)
     def test_page_operation_archives_page_operations(self):
         operation = self.record_operation()
 
@@ -109,6 +113,7 @@ class PageOperationTestCase(HistoryTestCase):
         operation.refresh_from_db()
         self.assertFalse(operation.is_archived)
 
+    @override_settings(DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS=True)
     def test_translation_operation_archives_translation_only(self):
         en_operation = self.record_operation()
 
