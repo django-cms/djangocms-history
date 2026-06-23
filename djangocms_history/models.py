@@ -16,6 +16,7 @@ from cms.signals import post_placeholder_operation, pre_placeholder_operation
 from . import action_handlers, actions, operation_handlers, signals
 from .datastructures import ArchivedPlugin
 from .helpers import get_operation_origin
+from .utils import plugin_has_m2m
 
 dump_json = functools.partial(json.dumps, cls=DjangoJSONEncoder)
 
@@ -162,6 +163,31 @@ def archive_old_operations(sender, request, user, **kwargs):
 # pre_obj_operation handler also no longer worked with canonical object origins.
 
 
+def is_unrecordable_change(operation_type, kwargs):
+    """
+    Whether the operation is a change to a plugin with a many-to-many
+    relation. Such changes cannot be undone, because the snapshot is restored
+    with ``queryset.update()``, which rejects M2M fields. Rather than record an
+    operation that fails on undo, the history is cleared instead.
+    """
+    if operation_type != operations.CHANGE_PLUGIN:
+        return False
+
+    plugin = kwargs.get('new_plugin') or kwargs.get('old_plugin')
+    return plugin is not None and plugin_has_m2m(plugin.plugin_type)
+
+
+def clear_operation_history(request, site, origin):
+    archive_or_delete_operations(
+        PlaceholderOperation.objects.filter(
+            site=site,
+            origin=origin,
+            user=request.user,
+            user_session_key=request.session.session_key,
+        )
+    )
+
+
 @receiver(pre_placeholder_operation)
 def create_placeholder_operation(sender, **kwargs):
     """
@@ -179,6 +205,14 @@ def create_placeholder_operation(sender, **kwargs):
     if not handler or not cms_history:
         return
 
+    site = Site.objects.get_current(request)
+    origin = get_operation_origin(kwargs['origin'])
+
+    if is_unrecordable_change(operation_type, kwargs):
+        # The change cannot be undone; clear the (now unreliable) history.
+        clear_operation_history(request, site, origin)
+        return
+
     # kwargs['language'] can be None if the user has not enabled
     # I18N or is not using i18n_patterns
     language = kwargs['language'] or settings.LANGUAGE_CODE
@@ -186,11 +220,11 @@ def create_placeholder_operation(sender, **kwargs):
     operation = PlaceholderOperation.objects.create(
         operation_type=operation_type,
         token=kwargs['token'],
-        origin=get_operation_origin(kwargs['origin']),
+        origin=origin,
         language=language,
         user=request.user,
         user_session_key=request.session.session_key,
-        site=Site.objects.get_current(request),
+        site=site,
     )
     handler(operation, **kwargs)
 
@@ -216,6 +250,10 @@ def update_placeholder_operation(sender, **kwargs):
 
     site = Site.objects.get_current(request)
     origin = get_operation_origin(kwargs['origin'])
+
+    if is_unrecordable_change(operation_type, kwargs):
+        # Nothing was recorded in the pre handler; the history was cleared.
+        return
 
     p_operations = PlaceholderOperation.objects.filter(
         site=site,

@@ -34,6 +34,9 @@ INSTALLED_APPS = [
     # which lets the tests build nested plugin trees without extra
     # dependencies).
     'cms.test_utils.project.pluginapp.plugins.link',
+    # ArticlePlugin (manytomany_rel) provides a plugin with a ManyToMany
+    # relation, used to test undo history handling of M2M changes.
+    'cms.test_utils.project.pluginapp.plugins.manytomany_rel',
 ]
 
 if os.environ.get('VERSIONING'):
@@ -107,6 +110,7 @@ CMS_TEMPLATES = [
 # for it to build the test database.
 MIGRATION_MODULES = {
     'link': 'tests.link_migrations',
+    'manytomany_rel': 'tests.manytomany_migrations',
 }
 
 # Required by django CMS 4.1 (ignored by django CMS 5+)

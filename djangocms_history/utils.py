@@ -19,3 +19,9 @@ def get_plugin_class(plugin_type):
 @lru_cache()
 def get_plugin_model(plugin_type):
     return get_plugin_class(plugin_type).model
+
+
+@lru_cache()
+def plugin_has_m2m(plugin_type):
+    opts = get_plugin_class(plugin_type).model._meta.concrete_model._meta
+    return bool(opts.local_many_to_many)
