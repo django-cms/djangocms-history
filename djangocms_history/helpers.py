@@ -1,14 +1,13 @@
 from collections import defaultdict
 from datetime import timedelta
 
+from cms.models import CMSPlugin
+from cms.utils import get_language_from_request
 from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import signals
 from django.utils import timezone
-
-from cms.models import CMSPlugin
-from cms.utils import get_language_from_request
 
 from .compat import CMS_GTE_36
 from .utils import get_plugin_fields, get_plugin_model
@@ -20,20 +19,14 @@ def delete_plugins(placeholder, plugin_ids, nested=True):
     # cms signals.
     # Instead, delete each plugin individually and turn off
     # position reordering using the _no_reorder trick.
-    plugins = (
-        placeholder
-        .cmsplugin_set
-        .filter(pk__in=plugin_ids)
-        .order_by('-depth')
-        .select_related()
-    )
+    plugins = placeholder.cmsplugin_set.filter(pk__in=plugin_ids).order_by("-depth").select_related()
 
     bound_plugins = get_bound_plugins(plugins)
 
     for plugin in bound_plugins:
         plugin._no_reorder = True
 
-        if hasattr(plugin, 'cmsplugin_ptr'):
+        if hasattr(plugin, "cmsplugin_ptr"):
             plugin.cmsplugin_ptr._no_reorder = True
 
         # When the nested option is False
@@ -69,16 +62,16 @@ def get_plugin_data(plugin, only_meta=False):
         custom_data = None
     else:
         plugin_fields = get_plugin_fields(plugin.plugin_type)
-        _plugin_data = serializers.serialize('python', (plugin,), fields=plugin_fields)[0]
-        custom_data = _plugin_data['fields']
+        _plugin_data = serializers.serialize("python", (plugin,), fields=plugin_fields)[0]
+        custom_data = _plugin_data["fields"]
 
     plugin_data = {
-        'pk': plugin.pk,
-        'creation_date': plugin.creation_date,
-        'position': plugin.position,
-        'plugin_type': plugin.plugin_type,
-        'parent_id': plugin.parent_id,
-        'data': custom_data,
+        "pk": plugin.pk,
+        "creation_date": plugin.creation_date,
+        "position": plugin.position,
+        "plugin_type": plugin.plugin_type,
+        "parent_id": plugin.parent_id,
+        "data": custom_data,
     }
     return plugin_data
 
@@ -139,35 +132,25 @@ def disable_cms_plugin_signals(func):
     if CMS_GTE_36:
         return func
 
-    from cms.signals import (
-        post_delete_plugins, pre_delete_plugins, pre_save_plugins,
-    )
+    from cms.signals import post_delete_plugins, pre_delete_plugins, pre_save_plugins
 
     # The wrapped function NEEDS to set _no_reorder on any bound plugin instance
     # otherwise this does nothing because it only disconnects signals
     # for the cms.CMSPlugin class, not its subclasses
     plugin_signals = (
-        (signals.pre_delete, pre_delete_plugins, 'cms_pre_delete_plugin', CMSPlugin),
-        (signals.pre_save, pre_save_plugins, 'cms_pre_save_plugin', CMSPlugin),
-        (signals.post_delete, post_delete_plugins, 'cms_post_delete_plugin', CMSPlugin),
+        (signals.pre_delete, pre_delete_plugins, "cms_pre_delete_plugin", CMSPlugin),
+        (signals.pre_save, pre_save_plugins, "cms_pre_save_plugin", CMSPlugin),
+        (signals.post_delete, post_delete_plugins, "cms_post_delete_plugin", CMSPlugin),
     )
 
     def wrapper(*args, **kwargs):
         for signal, handler, dispatch_id, model_class in plugin_signals:
-            signal.disconnect(
-                handler,
-                sender=model_class,
-                dispatch_uid=dispatch_id
-            )
+            signal.disconnect(handler, sender=model_class, dispatch_uid=dispatch_id)
             signal.disconnect(handler, sender=model_class)
 
         func(*args, **kwargs)
 
         for signal, handler, dispatch_id, model_class in plugin_signals:
-            signal.connect(
-                handler,
-                sender=model_class,
-                dispatch_uid=dispatch_id
-            )
+            signal.connect(handler, sender=model_class, dispatch_uid=dispatch_id)
 
     return wrapper

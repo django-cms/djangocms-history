@@ -1,6 +1,6 @@
 #other requirements
-django-app-helper
+pytest
+pytest-django
 tox
 coverage
-isort
-flake8
+-e .
