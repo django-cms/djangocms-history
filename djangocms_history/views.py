@@ -1,10 +1,16 @@
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import (
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+)
 from django.views.generic import DetailView
 
 from .forms import UndoRedoForm
 from .helpers import (
-    get_active_operation, get_inactive_operation, get_operations_from_request,
+    get_active_operation,
+    get_inactive_operation,
+    get_operations_from_request,
 )
 from .models import PlaceholderOperation
 
@@ -30,6 +36,12 @@ class UndoRedoView(DetailView):
 
         if not self.object:
             return HttpResponseBadRequest('No operation found')
+
+        if not self.object.is_editable(request.user):
+            return HttpResponseForbidden(
+                'The operation cannot be applied because '
+                'the content is not editable'
+            )
 
         if self.action == 'undo':
             self.object.undo()

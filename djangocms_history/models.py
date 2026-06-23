@@ -13,12 +13,13 @@ from django.dispatch import receiver
 from cms import operations
 from cms.models import Placeholder
 from cms.signals import (
-    post_placeholder_operation, pre_obj_operation, pre_placeholder_operation,
+    post_placeholder_operation,
+    pre_obj_operation,
+    pre_placeholder_operation,
 )
 
 from . import action_handlers, actions, operation_handlers, signals
 from .datastructures import ArchivedPlugin
-
 
 dump_json = functools.partial(json.dumps, cls=DjangoJSONEncoder)
 
@@ -141,14 +142,16 @@ def archive_old_operations(sender, request, user, **kwargs):
 @receiver(pre_obj_operation)
 def pre_page_operation_handler(sender, **kwargs):
     operation_type = kwargs['operation']
+
+    if 'obj' not in kwargs:
+        # Some page operations (e.g. ADD_PAGE_TRANSLATION) are sent
+        # without the object they operate on. There's nothing to
+        # archive in that case.
+        return
+
     p_operations = PlaceholderOperation.objects.all()
 
-    if operation_type == operations.PUBLISH_STATIC_PLACEHOLDER:
-        # Fetch all operations which act on the published
-        # static placeholder
-        p_id = kwargs['obj'].draft_id
-        p_operations = p_operations.filter(actions__placeholder=p_id)
-    elif operation_type in operations.PAGE_TRANSLATION_OPERATIONS:
+    if operation_type in operations.PAGE_TRANSLATION_OPERATIONS:
         # Fetch all operations which act on the translation only
         page = kwargs['obj']
         translation = kwargs['translation']
@@ -165,8 +168,8 @@ def pre_page_operation_handler(sender, **kwargs):
         queries = [Q(origin__startswith=url) for url in page_urls]
         p_operations = p_operations.filter(functools.reduce(operator.or_, queries))
 
-    # Both cms.Page and cms.StaticPlaceholder have a site field
-    # the site field on cms.StaticPlaceholder is optional though.
+    # django CMS 4.1 stores the site on the page's tree node,
+    # django CMS 5+ stores it on the page itself.
     try:
         site_id = kwargs['obj'].node.site_id
     except AttributeError:
@@ -331,6 +334,19 @@ class PlaceholderOperation(models.Model):
 
     def set_post_action_data(self, action, data):
         self.actions.filter(action=action).update(post_action_data=dump_json(data))
+
+    def is_editable(self, user):
+        """
+        Returns whether all placeholders touched by this operation are
+        editable by the given user. With djangocms-versioning installed
+        this is False for placeholders that belong to published (or
+        otherwise locked) versions; undoing/redoing operations on such
+        content would corrupt it.
+        """
+        return all(
+            action.placeholder.check_source(user)
+            for action in self.actions.select_related('placeholder')
+        )
 
     @transaction.atomic
     def undo(self):

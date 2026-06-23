@@ -1,0 +1,1 @@
+<a href="{{ link }}">{{ instance.name }}</a>{% if instance.child_plugin_instances %}{% for plugin in instance.child_plugin_instances %}{% render_plugin plugin %}{% endfor %}{% endif %}

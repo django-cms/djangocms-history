@@ -50,6 +50,16 @@ file for additional dependencies:
 |python| |django| |djangocms|
 
 
+Version support
+---------------
+
+djangocms-history 3.x supports django CMS 4.1 and later. If you are using
+django CMS 3.x, use djangocms-history 2.x.
+
+* Python: 3.9 - 3.13
+* Django: 4.2 - 5.2
+* django CMS: 4.1, 5.x
+
 Installation
 ------------
 
@@ -59,6 +69,13 @@ For a manual install:
 * add ``djangocms_history`` to your ``INSTALLED_APPS``
 * run ``python manage.py migrate djangocms_history``
 
+.. warning::
+
+    Upgrading from djangocms-history 2.x: history records created with
+    django CMS 3.x cannot be replayed against the plugin tree of
+    django CMS 4 and later. All existing history records are deleted by
+    the migrations of version 3.0. Since the undo window is 24 hours,
+    this only affects operations performed right before the upgrade.
 
 Configuration
 -------------
@@ -66,16 +83,29 @@ Configuration
 Once installed, django CMS History will make new options available to the web content manager. These will be visible in
 the django CMS toolbar when managing content that is supported by the application.
 
+djangocms-versioning
+--------------------
+
+When `djangocms-versioning <https://github.com/django-cms/djangocms-versioning>`_
+is installed, undo/redo only operates on content that is editable, i.e. on
+draft versions. Once a version has been published, operations recorded on
+its draft can no longer be undone or redone; the toolbar buttons are
+disabled and the endpoints refuse to modify the published content.
 
 Running Tests
 -------------
 
 You can run tests by executing::
 
-    virtualenv env
+    python -m venv env
     source env/bin/activate
-    pip install -r tests/requirements.txt
-    python setup.py test
+    pip install -r tests/requirements/dj52_cms50.txt -e .
+    python runtests.py
+
+Run with djangocms-versioning installed::
+
+    pip install djangocms-versioning
+    VERSIONING=1 python runtests.py
 
 
 .. |pypi| image:: https://badge.fury.io/py/djangocms-history.svg
@@ -85,9 +115,9 @@ You can run tests by executing::
 .. |coverage| image:: https://codecov.io/gh/divio/djangocms-history/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/divio/djangocms-history
 
-.. |python| image:: https://img.shields.io/badge/python-3.5+-blue.svg
+.. |python| image:: https://img.shields.io/badge/python-3.9+-blue.svg
     :target: https://pypi.org/project/djangocms-history/
-.. |django| image:: https://img.shields.io/badge/django-2.2,%203.0,%203.1-blue.svg
+.. |django| image:: https://img.shields.io/badge/django-4.2%20--%205.2-blue.svg
     :target: https://www.djangoproject.com/
-.. |djangocms| image:: https://img.shields.io/badge/django%20CMS-3.7%2B-blue.svg
+.. |djangocms| image:: https://img.shields.io/badge/django%20CMS-4.1%2B-blue.svg
     :target: https://www.django-cms.org/

@@ -1,0 +1,21 @@
+[tool.ruff]
+line-length = 119
+exclude = [
+    "djangocms_history/migrations",
+    "tests/link_migrations",
+    ".tox",
+    ".venv",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["djangocms_history"]
+section-order = ["future", "standard-library", "django", "cms", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+django = ["django"]
+cms = ["cms", "menus"]

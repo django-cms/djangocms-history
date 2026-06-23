@@ -4,18 +4,16 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.translation import gettext
 
-from cms.api import get_page_draft
 from cms.constants import REFRESH_PAGE
 from cms.toolbar.items import BaseButton, ButtonList
 from cms.toolbar_base import CMSToolbar
 from cms.toolbar_pool import toolbar_pool
 from cms.utils.page_permissions import user_can_change_page
 
-from sekizai.helpers import get_varname
-
-from .compat import CMS_GTE_36
 from .helpers import (
-    get_active_operation, get_inactive_operation, get_operations_from_request,
+    get_active_operation,
+    get_inactive_operation,
+    get_operations_from_request,
 )
 
 
@@ -47,47 +45,33 @@ class AjaxButton(BaseButton):
 
 @toolbar_pool.register
 class UndoRedoToolbar(CMSToolbar):
-    # django CMS 3.4 compatibility
-    icon_css = '<style>.cms-btn-disabled img {opacity: 0.2;}</style>'
 
     class Media:
         css = {
             'all': [static('djangocms_history/color_mode.css')]
         }
 
-    @property
-    def request_path(self):
-        try:
-            origin = self.toolbar.request_path
-        except AttributeError:
-            # django CMS < 3.5 compatibility
-            origin = self.request.path
-        return origin
-
     def populate(self):
-        # django CMS >= 3.6
-        if CMS_GTE_36 and not self.toolbar.edit_mode_active:
-            return
-        # django CMS <= 3.5
-        if not CMS_GTE_36 and not self.toolbar.edit_mode:
+        if not self.toolbar.edit_mode_active:
             return
 
-        cms_page = get_page_draft(self.request.current_page)
+        page = self.request.current_page
 
-        if not cms_page or user_can_change_page(self.request.user, cms_page):
-            self.active_operation = self.get_active_operation()
-            self.add_buttons()
+        if page and not user_can_change_page(self.request.user, page):
+            # On a page the user is not allowed to change, don't offer
+            # undo/redo. On non-page content (current_page is None) the
+            # buttons are shown; the undo/redo endpoint enforces
+            # editability per affected placeholder.
+            return
+
+        self.active_operation = self.get_active_operation()
+        self.add_buttons()
 
     def get_operations(self):
-        if CMS_GTE_36:
-            toolbar_language = self.toolbar.toolbar_language
-        else:
-            toolbar_language = self.toolbar.language
-
         operations = get_operations_from_request(
             self.request,
-            path=self.request_path,
-            language=toolbar_language,
+            path=self.toolbar.request_path,
+            language=self.toolbar.toolbar_language,
         )
         return operations
 
@@ -110,14 +94,9 @@ class UndoRedoToolbar(CMSToolbar):
         self.toolbar.add_item(container)
 
     def _get_ajax_button(self, name, url, icon, button_type, disabled=True):
-        if CMS_GTE_36:
-            toolbar_language = self.toolbar.toolbar_language
-        else:
-            toolbar_language = self.toolbar.language
-
         data = {
-            'language': toolbar_language,
-            'cms_path': self.request_path,
+            'language': self.toolbar.toolbar_language,
+            'cms_path': self.toolbar.request_path,
             'csrfmiddlewaretoken': self.toolbar.csrf_token,
         }
         button = AjaxButton(
@@ -131,9 +110,12 @@ class UndoRedoToolbar(CMSToolbar):
         )
         return button
 
+    def _operation_is_applicable(self, operation):
+        return bool(operation) and operation.is_editable(self.request.user)
+
     def get_undo_button(self):
         url = reverse('admin:djangocms_history_undo')
-        disabled = not bool(self.active_operation)
+        disabled = not self._operation_is_applicable(self.active_operation)
         button = self._get_ajax_button(
             name=gettext('Undo'),
             url=url,
@@ -146,7 +128,7 @@ class UndoRedoToolbar(CMSToolbar):
     def get_redo_button(self):
         operation = self.get_inactive_operation()
         url = reverse('admin:djangocms_history_redo')
-        disabled = not bool(operation)
+        disabled = not self._operation_is_applicable(operation)
         button = self._get_ajax_button(
             name=gettext('Redo'),
             url=url,
@@ -155,8 +137,3 @@ class UndoRedoToolbar(CMSToolbar):
             button_type="redo",
         )
         return button
-
-    def render_addons(self, context):
-        # django CMS 3.4 compatibility
-        context[get_varname()]['css'].append(self.icon_css)
-        return []

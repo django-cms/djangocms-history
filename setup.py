@@ -5,7 +5,7 @@ from djangocms_history import __version__
 
 
 REQUIREMENTS = [
-    'django-cms>=3.7',
+    'django-cms>=4.1',
 ]
 
 
@@ -17,17 +17,18 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.5',
-    'Programming Language :: Python :: 3.6',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Framework :: Django',
-    'Framework :: Django :: 2.2',
-    'Framework :: Django :: 3.0',
-    'Framework :: Django :: 3.1',
+    'Framework :: Django :: 4.2',
+    'Framework :: Django :: 5.1',
+    'Framework :: Django :: 5.2',
     'Framework :: Django CMS',
-    'Framework :: Django CMS :: 3.7',
-    'Framework :: Django CMS :: 3.8',
+    'Framework :: Django CMS :: 4.1',
+    'Framework :: Django CMS :: 5.0',
     'Topic :: Internet :: WWW/HTTP',
     'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     'Topic :: Software Development',
@@ -51,5 +52,5 @@ setup(
     zip_safe=False,
     install_requires=REQUIREMENTS,
     classifiers=CLASSIFIERS,
-    test_suite='tests.settings.run',
+    python_requires='>=3.9',
 )
