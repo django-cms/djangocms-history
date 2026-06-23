@@ -1,12 +1,77 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "djangocms-history"
+dynamic = ["version"]
+description = "Adds undo/redo functionality to django CMS"
+readme = "README.rst"
+license = "BSD-3-Clause"
+requires-python = ">=3.9"
+authors = [{ name = "Divio AG", email = "info@divio.ch" }]
+maintainers = [
+    { name = "Django CMS Association and contributors", email = "info@django-cms.org" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django CMS",
+    "Framework :: Django CMS :: 4.1",
+    "Framework :: Django CMS :: 5.0",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = ["django-cms>=4.1"]
+
+optional-dependencies.test = ["coverage"]
+
+[project.urls]
+Homepage = "https://github.com/django-cms/djangocms-history"
+Repository = "https://github.com/django-cms/djangocms-history"
+Issues = "https://github.com/django-cms/djangocms-history"
+
+[tool.setuptools.dynamic]
+version = { attr = "djangocms_history.__version__" }
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["djangocms_history*"]
+
+[tool.setuptools.package-data]
+"djangocms_history" = [
+    "templates/**/*.html",
+    "static/**/*",
+    "locale/**/*",
+    "*.po",
+    "*.mo",
+]
+
 [tool.ruff]
+target-version = "py39"
 line-length = 119
 exclude = [
     "djangocms_history/migrations",
     "tests/link_migrations",
-    ".tox",
-    ".venv",
-    "build",
-    "dist",
 ]
 
 [tool.ruff.lint]

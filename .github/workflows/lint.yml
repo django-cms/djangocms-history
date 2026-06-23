@@ -12,8 +12,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install ruff
         run: pip install --upgrade ruff
-      - name: Run ruff
+      - name: Run ruff check
         run: ruff check djangocms_history tests
