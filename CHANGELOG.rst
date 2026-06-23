@@ -25,7 +25,8 @@ Changelog
   monkeypatch is obsolete since django CMS 3.5)
 * Removed ``djangocms_history.helpers.disable_cms_plugin_signals``
 * The test suite was rewritten to drive the real django CMS placeholder
-  endpoints (Django test runner, ``python runtests.py``)
+  endpoints, and now runs on ``pytest`` / ``pytest-django``
+* Packaging moved to ``pyproject.toml`` (``setup.py`` removed)
 
 2.2.3 (2023-09-08)
 ==================

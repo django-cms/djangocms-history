@@ -46,16 +46,20 @@ def _restore_archived_plugins(action, data):
             offset=last + count,
         )
 
-    plugins_by_id = {}
+    restored_ids = {archived_plugin.pk for archived_plugin in archived_plugins}
+    # Parents that are not part of the restored set survived in the
+    # placeholder (e.g. a nested plugin restored under an existing parent).
+    # Fetch them all in one query rather than one lookup per plugin.
+    surviving_parent_ids = {
+        archived_plugin.parent_id
+        for archived_plugin in archived_plugins
+        if archived_plugin.parent_id and archived_plugin.parent_id not in restored_ids
+    }
+    plugins_by_id = CMSPlugin.objects.in_bulk(surviving_parent_ids)
 
     for archived_plugin in archived_plugins:
-        if archived_plugin.parent_id in plugins_by_id:
+        if archived_plugin.parent_id:
             parent = plugins_by_id[archived_plugin.parent_id]
-        elif archived_plugin.parent_id:
-            # The parent is not part of the restored set;
-            # it survived in the placeholder (e.g. a nested plugin
-            # restored under an existing parent).
-            parent = CMSPlugin.objects.get(pk=archived_plugin.parent_id)
         else:
             parent = None
 

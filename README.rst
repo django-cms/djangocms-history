@@ -95,17 +95,18 @@ disabled and the endpoints refuse to modify the published content.
 Running Tests
 -------------
 
-You can run tests by executing::
+The test suite uses `pytest <https://docs.pytest.org/>`_ (with
+``pytest-django``). You can run tests by executing::
 
     python -m venv env
     source env/bin/activate
     pip install -r tests/requirements/dj52_cms50.txt -e .
-    python runtests.py
+    pytest
 
 Run with djangocms-versioning installed::
 
     pip install djangocms-versioning
-    VERSIONING=1 python runtests.py
+    VERSIONING=1 pytest
 
 
 .. |pypi| image:: https://badge.fury.io/py/djangocms-history.svg
