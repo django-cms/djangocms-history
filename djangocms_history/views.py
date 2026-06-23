@@ -101,14 +101,14 @@ class UndoRedoView(DetailView):
 
     def get_move_response(self, request):
         """
-        DRAFT. Builds the move data bridge for an undone/redone move.
+        Builds the move data bridge for an undone/redone move.
 
         Unlike the add/edit close frame, the move bridge is normally
         co-constructed by the browser (which performed the drag) and the
         server. There is no drag during undo/redo, so we synthesise both
         halves here: the rendered tree/content from ``get_plugin_tree`` plus
-        the move geometry (parent, position, order, source/target
-        placeholders) the browser would otherwise supply.
+        the move geometry (parent, position, source/target placeholders) the
+        browser would otherwise supply.
         """
         plugin_id = self.object.get_move_plugin_id()
 
