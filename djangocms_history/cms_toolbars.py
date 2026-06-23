@@ -1,6 +1,5 @@
 import json
 
-from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.translation import gettext
 
@@ -19,19 +18,17 @@ from .helpers import (
 class AjaxButton(BaseButton):
     template = 'djangocms_history/toolbar/ajax_button.html'
 
-    def __init__(self, name, url, data, icon, active=False, disabled=False, button_type=""):
+    def __init__(self, name, url, data, active=False, disabled=False, button_type=""):
         self.name = name
         self.url = url
         self.active = active
         self.disabled = disabled
         self.data = data
-        self.icon = icon
         self.button_type = button_type
 
     def get_context(self):
         return {
             'name': self.name,
-            'icon': self.icon,
             'active': self.active,
             'disabled': self.disabled,
             'data': json.dumps(self.data),
@@ -42,11 +39,6 @@ class AjaxButton(BaseButton):
 
 @toolbar_pool.register
 class UndoRedoToolbar(CMSToolbar):
-
-    class Media:
-        css = {
-            'all': [static('djangocms_history/color_mode.css')]
-        }
 
     def populate(self):
         if not self.toolbar.edit_mode_active:
@@ -90,7 +82,7 @@ class UndoRedoToolbar(CMSToolbar):
         container.buttons.append(self.get_redo_button())
         self.toolbar.add_item(container)
 
-    def _get_ajax_button(self, name, url, icon, button_type, disabled=True):
+    def _get_ajax_button(self, name, url, button_type, disabled=True):
         data = {
             'language': self.toolbar.toolbar_language,
             'cms_path': self.toolbar.request_path,
@@ -100,7 +92,6 @@ class UndoRedoToolbar(CMSToolbar):
             name=name,
             url=url,
             data=data,
-            icon='',
             active=False,
             disabled=disabled,
             button_type=button_type
@@ -116,7 +107,6 @@ class UndoRedoToolbar(CMSToolbar):
         button = self._get_ajax_button(
             name=gettext('Undo'),
             url=url,
-            icon='',
             disabled=disabled,
             button_type="undo"
         )
@@ -129,7 +119,6 @@ class UndoRedoToolbar(CMSToolbar):
         button = self._get_ajax_button(
             name=gettext('Redo'),
             url=url,
-            icon='',
             disabled=disabled,
             button_type="redo",
         )

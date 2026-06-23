@@ -1,6 +1,6 @@
-<a href="{{ url }}" data-rel="ajax" data-post="{{ data }}" class="cms-btn{% if active %} cms-btn-active{% endif %}{% if disabled %} cms-btn-disabled{% endif %}">
+<a href="{{ url }}" data-rel="ajax" data-post="{{ data }}" title="{{ name }}" class="cms-btn{% if active %} cms-btn-active{% endif %}{% if disabled %} cms-btn-disabled{% endif %}">
     <span>
-        <div class="history-button {{ button_type }} {% if disabled %}disabled{% endif %}"></div>
+        <span class="cms-icon cms-icon-{{ button_type }}" style="line-height: 28px;"></span>
         <span class="cms-hidden" style="display: none;">{{ name }}</span>
     </span>
 </a>
