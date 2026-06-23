@@ -17,11 +17,11 @@ django CMS History has been rewritten from the ground up. It will continue to be
 improvements will be introduced in future releases.
 
 
-.. note:: 
+.. note::
 
     This project is considered 3rd party (no supervision by the `django CMS Association <https://www.django-cms.org/en/about-us/>`_). Join us on `Slack                 <https://www.django-cms.org/slack/>`_ for more information.
 
-.. image:: preview.png
+.. image:: preview.jpg
 
 *******************************************
 Contribute to this project and win rewards
@@ -29,8 +29,8 @@ Contribute to this project and win rewards
 
 Because this is a an open-source project, we welcome everyone to
 `get involved in the project <https://www.django-cms.org/en/contribute/>`_ and
-`receive a reward <https://www.django-cms.org/en/bounty-program/>`_ for their contribution. 
-Become part of a fantastic community and help us make django CMS the best CMS in the world.   
+`receive a reward <https://www.django-cms.org/en/bounty-program/>`_ for their contribution.
+Become part of a fantastic community and help us make django CMS the best CMS in the world.
 
 We'll be delighted to receive your
 feedback in the form of issues and pull requests. Before submitting your
@@ -44,21 +44,15 @@ section.
 Documentation
 =============
 
-See ``REQUIREMENTS`` in the `setup.py <https://github.com/divio/djangocms-history/blob/master/setup.py>`_
-file for additional dependencies:
-
-|python| |django| |djangocms|
-
-
 Version support
 ---------------
 
-djangocms-history 3.x supports django CMS 4.1 and later. If you are using
-django CMS 3.x, use djangocms-history 2.x.
+djangocms-history 3.x supports django CMS 4.1 and later. **If you are using
+django CMS 3.x, use djangocms-history 2.x.**
 
-The supported Python, Django and django CMS versions are shown by the
-|python|, |django| and |djangocms| badges at the top of this page (read
-directly from the published PyPI classifiers).
+The supported Python, Django and django CMS versions are shown by the badges at the top of this page (latest
+release read directly from the published PyPI classifiers). The latest supported versions of the master branch
+are found in the ``pyproject.toml``.
 
 Installation
 ------------
