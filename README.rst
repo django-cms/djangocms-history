@@ -83,6 +83,14 @@ Configuration
 Once installed, django CMS History will make new options available to the web content manager. These will be visible in
 the django CMS toolbar when managing content that is supported by the application.
 
+In-place updates
+................
+
+On django CMS 5.1 and later, undo and redo update the structure board in place
+(through the data bridge the endpoints return), preserving scroll position and
+board state. On earlier versions the page is reloaded after each undo/redo
+instead.
+
 Retiring operations: archive or delete
 ......................................
 

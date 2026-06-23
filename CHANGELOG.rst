@@ -16,6 +16,17 @@ Changelog
   djangocms-versioning installed, this prevents operations recorded on a
   draft from corrupting the version after it has been published; the
   toolbar buttons are disabled accordingly.
+* On django CMS 5.1 and later, undo/redo updates the structure board in place
+  (via the data bridge returned by the endpoints) instead of reloading the
+  page. Earlier versions automatically fall back to a full page reload.
+* Operations are now matched by a canonical object identifier
+  (``<content_type_id>:<object_id>``) rather than the request path, so the
+  undo/redo state is consistent across the edit, preview and structure
+  endpoints of the same object.
+* Changing a plugin that has a many-to-many relation clears the undo history
+  for that content, because such a change cannot be reliably undone.
+* Operations are no longer retired when a page is moved, deleted or its
+  translation removed (these are cleaned up by the 24h window instead).
 * Operations that are retired from undo/redo (superseded or expired) are now
   **deleted** by default instead of being kept forever with
   ``is_archived=True``. Set ``DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS = True`` to

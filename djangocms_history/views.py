@@ -10,12 +10,21 @@ from django.http import (
 from django.views.generic import DetailView
 
 from cms.models import CMSPlugin
-from cms.toolbar.utils import (
-    create_child_plugin_references,
-    get_plugin_content,
-    get_plugin_tree,
-)
-from cms.utils.plugins import downcast_plugins
+
+try:
+    from cms.toolbar.utils import (
+        create_child_plugin_references,
+        get_plugin_content,
+        get_plugin_tree,
+    )
+    from cms.utils.plugins import downcast_plugins
+
+    # django CMS 5.1+ applies the data bridge returned by undo/redo to update
+    # the structure board in place. Earlier versions lack these helpers (and
+    # the frontend support), so undo/redo falls back to a full page reload.
+    SUPPORTS_DATA_BRIDGE = True
+except ImportError:
+    SUPPORTS_DATA_BRIDGE = False
 
 from .forms import UndoRedoForm
 from .helpers import (
@@ -67,14 +76,15 @@ class UndoRedoView(DetailView):
         # Reflect the result to the frontend so it can update the structure
         # board in place. Add/edit operations return the plugin's close frame
         # (data bridge); move operations return the move JSON the structure
-        # board expects. Anything else falls back to an empty response (the
-        # frontend reloads the page).
-        response = (
-            self.get_close_frame_response(request)
-            or self.get_move_response(request)
-        )
-        if response is not None:
-            return response
+        # board expects. Anything else (or any django CMS older than 5.1)
+        # falls back to an empty response and the frontend reloads the page.
+        if SUPPORTS_DATA_BRIDGE:
+            response = (
+                self.get_close_frame_response(request)
+                or self.get_move_response(request)
+            )
+            if response is not None:
+                return response
 
         return HttpResponse(status=204)
 

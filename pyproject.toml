@@ -72,6 +72,7 @@ line-length = 119
 exclude = [
     "djangocms_history/migrations",
     "tests/link_migrations",
+    "tests/manytomany_migrations",
 ]
 
 [tool.ruff.lint]

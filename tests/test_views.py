@@ -1,10 +1,12 @@
 import json
 import re
+from unittest import skipUnless
 from unittest.mock import patch
 
 from django.urls import reverse
 
 from djangocms_history.models import PlaceholderOperation
+from djangocms_history.views import SUPPORTS_DATA_BRIDGE
 
 from .base import HistoryTestCase
 
@@ -71,9 +73,11 @@ class UndoRedoViewTestCase(HistoryTestCase):
             operation.refresh_from_db()
             self.assertFalse(operation.is_applied)
 
-            # Redoing re-adds the plugin, so the close frame is returned.
+            # Redoing re-adds the plugin. On django CMS 5.1+ the close frame
+            # (data bridge) is returned; on earlier versions it's an empty 204.
             response = self.client.post(self.redo_url, self.valid_data)
-            self.assertEqual(response.status_code, 200)
+            expected = 200 if SUPPORTS_DATA_BRIDGE else 204
+            self.assertEqual(response.status_code, expected)
             operation.refresh_from_db()
             self.assertTrue(operation.is_applied)
 
@@ -90,6 +94,7 @@ class UndoRedoViewTestCase(HistoryTestCase):
             self.assertEqual(len(self.tree(self.placeholder)), 1)
 
 
+@skipUnless(SUPPORTS_DATA_BRIDGE, 'data bridge requires django CMS 5.1+')
 class CloseFrameResponseTestCase(HistoryTestCase):
     """
     Undo/redo returns the affected plugin's close frame (carrying the data

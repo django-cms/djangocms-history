@@ -1,4 +1,8 @@
 from cms.api import add_plugin
+from cms.test_utils.project.pluginapp.plugins.manytomany_rel.models import (
+    ArticlePluginModel,
+    Section,
+)
 
 from djangocms_history.models import PlaceholderOperation
 from djangocms_history.utils import plugin_has_m2m
@@ -17,24 +21,37 @@ class PluginHasM2MTestCase(HistoryTestCase):
 
 class M2MChangeTestCase(HistoryTestCase):
     """
-    A change to a plugin with a many-to-many relation cannot be undone
-    (the snapshot is restored with queryset.update(), which rejects M2M
-    fields), so such a change clears the undo history instead of recording an
-    operation that would crash on undo.
+    A change to a plugin with a many-to-many relation cannot be undone (the
+    snapshot is restored with queryset.update(), which rejects M2M fields), so
+    such a change clears the undo history instead of recording an operation
+    that would crash on undo.
     """
 
-    def _add_article(self, title='before'):
-        return add_plugin(self.placeholder, 'ArticlePlugin', 'en', title=title)
+    def setUp(self):
+        super().setUp()
+        self.section = Section.objects.create(name='Section')
 
-    def _change_article(self, plugin, **data):
+    def _add_article(self, title='before'):
+        plugin = add_plugin(self.placeholder, 'ArticlePlugin', 'en', title=title)
+        plugin.sections.add(self.section)
+        return plugin
+
+    def _change_article(self, plugin, title='after'):
+        # sections is required (not blank), so a valid change must include it.
         endpoint = self.get_change_plugin_uri(plugin, language='en')
-        response = self.client.post(endpoint, data)
+        response = self.client.post(endpoint, {
+            'title': title,
+            'sections': [self.section.pk],
+        })
         self.assertEqual(response.status_code, 200)
+        # Confirm the change really applied (the form was valid and the
+        # operation signal fired) rather than re-rendering an invalid form.
+        self.assertEqual(ArticlePluginModel.objects.get(pk=plugin.pk).title, title)
 
     def test_m2m_change_is_not_recorded(self):
         with self.login_user_context(self.superuser):
             plugin = self._add_article()
-            self._change_article(plugin, title='after', sections=[])
+            self._change_article(plugin)
 
         self.assertEqual(PlaceholderOperation.objects.count(), 0)
 
@@ -45,7 +62,7 @@ class M2MChangeTestCase(HistoryTestCase):
             self.assertEqual(PlaceholderOperation.objects.count(), 1)
 
             plugin = self._add_article()
-            self._change_article(plugin, title='after', sections=[])
+            self._change_article(plugin)
 
         # The M2M change wiped the whole undo history.
         self.assertEqual(PlaceholderOperation.objects.count(), 0)
@@ -54,7 +71,7 @@ class M2MChangeTestCase(HistoryTestCase):
         with self.login_user_context(self.superuser):
             self.add_plugin_via_endpoint(name='a link')
             plugin = self._add_article()
-            self._change_article(plugin, title='after', sections=[])
+            self._change_article(plugin)
 
             # No crash (previously raised FieldError on the M2M field);
             # there is simply nothing left to undo.
