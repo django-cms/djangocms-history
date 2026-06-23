@@ -19,7 +19,8 @@ improvements will be introduced in future releases.
 
 .. note::
 
-    This project is considered 3rd party (no supervision by the `django CMS Association <https://www.django-cms.org/en/about-us/>`_). Join us on `Slack                 <https://www.django-cms.org/slack/>`_ for more information.
+    This project is considered 3rd party (no supervision by the `django CMS Association <https://www.django-cms.org/en/about-us/>`_).
+    Join us on `Discord <https://www.django-cms.org/discord/>`_ for more information.
 
 .. image:: preview.jpg
 
