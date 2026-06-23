@@ -39,7 +39,7 @@ classifiers = [
 ]
 dependencies = ["django-cms>=4.1"]
 
-optional-dependencies.test = ["coverage"]
+optional-dependencies.test = ["coverage", "pytest", "pytest-django"]
 
 [project.urls]
 Homepage = "https://github.com/django-cms/djangocms-history"
@@ -84,3 +84,9 @@ section-order = ["future", "standard-library", "django", "cms", "third-party", "
 [tool.ruff.lint.isort.sections]
 django = ["django"]
 cms = ["cms", "menus"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+pythonpath = ["."]

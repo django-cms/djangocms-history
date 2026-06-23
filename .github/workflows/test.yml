@@ -41,7 +41,7 @@ jobs:
         pip install -r tests/requirements/${{ matrix.requirements-file }}
         pip install -e .
     - name: Run coverage
-      run: coverage run runtests.py
+      run: coverage run -m pytest
       env:
         VERSIONING: ${{ contains(matrix.requirements-file, 'versioning') && '1' || '' }}
 
