@@ -54,7 +54,9 @@ class StructureBoardStateTestCase(HistoryTestCase):
 
     def _undo_enabled(self, url):
         content = self.client.get(url).content.decode()
-        index = content.find('history-button undo')
+        # The undo button uses the core icon class; its enabled/disabled state
+        # is the cms-btn-disabled class on the enclosing anchor (before it).
+        index = content.find('cms-icon-undo')
         self.assertNotEqual(index, -1, 'undo button is missing')
         snippet = content[max(0, index - 220):index + 40]
         return 'cms-btn-disabled' not in snippet

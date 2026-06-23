@@ -382,14 +382,17 @@ class PlaceholderOperation(models.Model):
 
     def get_close_frame_target(self):
         """
-        For single-plugin operations, returns ``(action, plugin_id)`` where
-        ``action`` is ``'add'`` or ``'edit'`` and ``plugin_id`` is the plugin
-        the operation centers on. Returns ``None`` for operations that don't
-        map to a single plugin (move, cut, clear, paste placeholder, ...).
+        For single-plugin operations, returns
+        ``(action, plugin_id, plugin_type, parent_id)`` where ``action`` is
+        ``'add'`` or ``'edit'``, ``plugin_id``/``plugin_type`` identify the
+        plugin the operation centers on and ``parent_id`` is its parent.
+        Returns ``None`` for operations that don't map to a single plugin
+        (move, cut, clear, paste placeholder, ...).
 
-        The caller must still verify the plugin exists after the replay: for
-        an undone "add" (or redone "delete"/"paste") the plugin is gone, which
-        is not an add/edit and should fall back to a plain reload.
+        The caller must still check whether the plugin exists after the replay:
+        if it is gone (an undone "add", a redone "delete"/"paste") the net
+        effect is a deletion, which should be reflected as a "delete" frame
+        rather than an "add"/"edit" one.
         """
         action = self.CLOSE_FRAME_ACTIONS.get(self.operation_type)
 
@@ -406,7 +409,8 @@ class PlaceholderOperation(models.Model):
             operation_action.get_pre_action_data(),
         ):
             if data and data.get('plugins'):
-                return action, data['plugins'][0].pk
+                archived = data['plugins'][0]
+                return action, archived.pk, archived.plugin_type, data.get('parent_id')
         return None
 
     def get_move_plugin_id(self):

@@ -94,13 +94,14 @@ class UndoRedoView(DetailView):
         if target is None:
             return None
 
-        action, plugin_id = target
+        action, plugin_id, plugin_type, parent_id = target
         plugin = CMSPlugin.objects.filter(pk=plugin_id).first()
 
         if plugin is None:
-            # The plugin no longer exists (e.g. an undone "add"); this is a
-            # delete, not an add/edit, so there's nothing to render.
-            return None
+            # The plugin no longer exists: the net effect of the undo/redo is a
+            # deletion (an undone "add", a redone "delete"/"paste"). Emit a
+            # "delete" frame so the frontend removes it in place.
+            return self.get_delete_frame_response(request, plugin_id, plugin_type, parent_id)
 
         instance, plugin_admin = plugin.get_plugin_instance(admin=admin.site)
 
@@ -108,6 +109,32 @@ class UndoRedoView(DetailView):
             return None
 
         return plugin_admin.render_close_frame(request, instance, action=action)
+
+    def get_delete_frame_response(self, request, plugin_id, plugin_type, parent_id):
+        from cms.plugin_pool import plugin_pool
+
+        try:
+            plugin_class = plugin_pool.get_plugin(plugin_type)
+        except KeyError:
+            return None
+
+        plugin_admin = plugin_class(plugin_class.model, admin.site)
+
+        # Render the (surviving) parent's subtree so the structure board
+        # refreshes around the removed plugin; for a top-level plugin there is
+        # no parent and the frontend just removes the node by id.
+        parent = None
+        if parent_id:
+            db_parent = CMSPlugin.objects.filter(pk=parent_id).first()
+            if db_parent is not None:
+                parent = db_parent.get_bound_plugin()
+
+        return plugin_admin.render_close_frame(
+            request,
+            parent,
+            action='delete',
+            extra_data={'deleted': True, 'plugin_id': plugin_id},
+        )
 
     def get_move_response(self, request):
         """
@@ -165,15 +192,26 @@ class UndoRedoView(DetailView):
             # parent being updated (nested move).
             data['content'][0]['insert'] = moved_plugins[0].pk == plugin.pk
 
+        # The frontend only treats a JSON response as a data bridge if it
+        # carries an ``action`` (see ``_evaluateDataBridge`` / ``onPluginSave``
+        # in django CMS); without it the move is ignored and the page reloads.
+        data['action'] = 'move'
+
         # Fields the browser normally contributes from the drag operation.
-        # ``plugin_order`` is intentionally omitted: the core move request does
-        # not send it either (the structure board defaults it to an empty list).
         data['plugin_id'] = plugin.pk
         data['plugin_parent'] = plugin.parent_id or ''
         data['placeholder_id'] = target_placeholder.pk
         data['target_position'] = plugin.position
         data['source_placeholder_id'] = self._get_move_source_placeholder_id(
             target_placeholder,
+        )
+        # Unlike a drag (where the browser has already positioned the element),
+        # the structure board DOM is still in the pre-undo/redo order. The
+        # frontend re-orders the moved plugin among its siblings using
+        # ``plugin_order``, so it must reflect the restored order.
+        data['plugin_order'] = target_placeholder.get_plugin_tree_order(
+            self.object.language,
+            parent_id=plugin.parent_id,
         )
         data['move_a_copy'] = False
 

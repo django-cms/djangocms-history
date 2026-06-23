@@ -66,17 +66,18 @@ class UndoRedoViewTestCase(HistoryTestCase):
             operation = self.latest_operation()
             self.assertTrue(operation.is_applied)
 
-            # Undoing the add deletes the plugin, so there is nothing to
-            # render: an empty 204.
+            # On django CMS 5.1+ both directions return a data bridge (undo a
+            # "delete" frame, redo an "add" frame); earlier versions get 204.
+            expected = 200 if SUPPORTS_DATA_BRIDGE else 204
+
+            # Undoing the add deletes the plugin.
             response = self.client.post(self.undo_url, self.valid_data)
-            self.assertEqual(response.status_code, 204)
+            self.assertEqual(response.status_code, expected)
             operation.refresh_from_db()
             self.assertFalse(operation.is_applied)
 
-            # Redoing re-adds the plugin. On django CMS 5.1+ the close frame
-            # (data bridge) is returned; on earlier versions it's an empty 204.
+            # Redoing re-adds the plugin.
             response = self.client.post(self.redo_url, self.valid_data)
-            expected = 200 if SUPPORTS_DATA_BRIDGE else 204
             self.assertEqual(response.status_code, expected)
             operation.refresh_from_db()
             self.assertTrue(operation.is_applied)
@@ -148,12 +149,43 @@ class CloseFrameResponseTestCase(HistoryTestCase):
         self.assertEqual(bridge['action'], 'add')
         self.assertEqual(bridge['plugin_id'], plugin.pk)
 
-    def test_undo_add_returns_empty(self):
+    def test_undo_add_returns_delete_frame(self):
         with self.login_user_context(self.superuser):
-            self.add_plugin_via_endpoint()
-            response = self.post_undo()  # add undone -> plugin gone
+            plugin = self.add_plugin_via_endpoint()
+            response = self.post_undo()  # add undone -> plugin deleted
 
-        self.assertEqual(response.status_code, 204)
+        bridge = self.data_bridge(response)
+        self.assertEqual(bridge['action'], 'delete')
+        self.assertEqual(bridge['plugin_id'], plugin.pk)
+        self.assertTrue(bridge['deleted'])
+
+    def test_redo_delete_returns_delete_frame(self):
+        plugin = self.add_plugin(name='delete me')
+
+        with self.login_user_context(self.superuser):
+            self.delete_plugin_via_endpoint(plugin)
+            self.post_undo()             # restore
+            response = self.post_redo()  # delete again -> plugin gone
+
+        bridge = self.data_bridge(response)
+        self.assertEqual(bridge['action'], 'delete')
+        self.assertEqual(bridge['plugin_id'], plugin.pk)
+
+    def test_undo_paste_returns_delete_frame(self):
+        existing = self.add_plugin(name='existing')
+
+        with self.login_user_context(self.superuser):
+            clipboard_root = self.copy_plugin_to_clipboard_via_endpoint(existing)
+            pasted = self.paste_plugin_via_endpoint(
+                clipboard_root,
+                target_placeholder=self.placeholder,
+                target_position=2,
+            )
+            response = self.post_undo()  # paste undone -> pasted plugin deleted
+
+        bridge = self.data_bridge(response)
+        self.assertEqual(bridge['action'], 'delete')
+        self.assertEqual(bridge['plugin_id'], pasted.pk)
 
     def test_move_returns_move_response(self):
         self.add_plugin(name='first')
@@ -167,6 +199,8 @@ class CloseFrameResponseTestCase(HistoryTestCase):
         self.assertEqual(response['Content-Type'], 'application/json')
 
         data = json.loads(response.content)
+        # The frontend requires an 'action' to recognise the JSON data bridge.
+        self.assertEqual(data['action'], 'move')
         self.assertEqual(data['plugin_id'], second.pk)
         self.assertEqual(data['target_position'], 2)
         self.assertFalse(data['move_a_copy'])
@@ -212,5 +246,72 @@ class CloseFrameResponseTestCase(HistoryTestCase):
         # The moved subtree is the first entry and is flagged for insertion.
         self.assertEqual(content[0]['pluginIds'], [child.pk])
         self.assertTrue(content[0]['insert'])
-        # 'plugin_order' is intentionally not sent (the core omits it too).
-        self.assertNotIn('plugin_order', data)
+        # The child moved to the top level of the sidebar.
+        self.assertEqual(data['plugin_order'], [child.pk])
+
+
+@skipUnless(SUPPORTS_DATA_BRIDGE, 'data bridge requires django CMS 5.1+')
+class MoveOrderDataBridgeTestCase(HistoryTestCase):
+    """
+    Undoing a move restores the plugin order, and the move data bridge
+    reflects the restored position of the moved plugin.
+    """
+
+    def order(self):
+        return list(
+            self.placeholder
+            .get_plugins('en')
+            .order_by('position')
+            .values_list('pk', flat=True)
+        )
+
+    def test_move_a_after_b_then_undo(self):
+        a = self.add_plugin(name='a')  # position 1
+        b = self.add_plugin(name='b')  # position 2
+
+        with self.login_user_context(self.superuser):
+            # Move a after b -> order becomes b, a.
+            self.move_plugin_via_endpoint(a, target_position=2)
+            self.assertEqual(self.order(), [b.pk, a.pk])
+
+            # Undo -> order is a, b again.
+            response = self.post_undo()
+            self.assertEqual(self.order(), [a.pk, b.pk])
+
+            # The data bridge reflects the restored order: a back at position 1.
+            data = json.loads(response.content)
+            self.assertEqual(data['action'], 'move')
+            self.assertEqual(data['plugin_id'], a.pk)
+            self.assertEqual(data['target_position'], 1)
+            self.assertEqual(data['plugins'][0]['plugin_id'], a.pk)
+            self.assertEqual(data['plugins'][0]['position'], 1)
+            # plugin_order tells the structure board the full restored order,
+            # so it can re-position the moved node (the DOM is still b, a).
+            self.assertEqual(data['plugin_order'], [a.pk, b.pk])
+            # The structure board markup is the moved plugin's drag item.
+            self.assertIn('cms-draggable-{}'.format(a.pk), data['html'])
+
+    def test_move_b_before_a_then_undo(self):
+        a = self.add_plugin(name='a')  # position 1
+        b = self.add_plugin(name='b')  # position 2
+
+        with self.login_user_context(self.superuser):
+            # Move b before a -> order becomes b, a.
+            self.move_plugin_via_endpoint(b, target_position=1)
+            self.assertEqual(self.order(), [b.pk, a.pk])
+
+            # Undo -> order is a, b again.
+            response = self.post_undo()
+            self.assertEqual(self.order(), [a.pk, b.pk])
+
+            # The data bridge reflects the restored order: b back at position 2.
+            data = json.loads(response.content)
+            self.assertEqual(data['action'], 'move')
+            self.assertEqual(data['plugin_id'], b.pk)
+            self.assertEqual(data['target_position'], 2)
+            self.assertEqual(data['plugins'][0]['plugin_id'], b.pk)
+            self.assertEqual(data['plugins'][0]['position'], 2)
+            # plugin_order tells the structure board the full restored order,
+            # so it can re-position the moved node (the DOM is still b, a).
+            self.assertEqual(data['plugin_order'], [a.pk, b.pk])
+            self.assertIn('cms-draggable-{}'.format(b.pk), data['html'])
