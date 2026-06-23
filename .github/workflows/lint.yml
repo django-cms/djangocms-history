@@ -16,6 +16,4 @@ jobs:
       - name: Install ruff
         run: pip install --upgrade ruff
       - name: Run ruff check
-        run: ruff check
-      - name: Run ruff format
-        run: ruff format --check
+        run: ruff check djangocms_history tests

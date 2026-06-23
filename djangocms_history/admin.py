@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import re_path
+from django.urls import path
 
 from . import views
 from .models import PlaceholderOperation
@@ -7,6 +7,7 @@ from .models import PlaceholderOperation
 
 @admin.register(PlaceholderOperation)
 class PlaceholderOperationAdmin(admin.ModelAdmin):
+
     def get_model_perms(self, request):
         return {}
 
@@ -23,7 +24,7 @@ class PlaceholderOperationAdmin(admin.ModelAdmin):
         # This sucks but its our only way to register the internal
         # undo/redo urls without asking users to configure them
         urlpatterns = [
-            re_path(r"^undo/$", views.undo, name="djangocms_history_undo"),
-            re_path(r"^redo/$", views.redo, name="djangocms_history_redo"),
+            path('undo/', views.undo, name='djangocms_history_undo'),
+            path('redo/', views.redo, name='djangocms_history_redo'),
         ]
         return urlpatterns

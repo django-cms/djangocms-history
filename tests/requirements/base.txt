@@ -1,6 +1,3 @@
-#other requirements
+coverage
 pytest
 pytest-django
-tox
-coverage
--e .

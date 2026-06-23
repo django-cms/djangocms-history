@@ -19,8 +19,8 @@ msgstr ""
 
 #: cms_toolbars.py:155
 msgid "Undo"
-msgstr ""
+msgstr "Deshacer"
 
 #: cms_toolbars.py:167
 msgid "Redo"
-msgstr ""
+msgstr "Rehacer"

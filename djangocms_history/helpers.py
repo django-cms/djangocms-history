@@ -1,39 +1,73 @@
 from collections import defaultdict
 from datetime import timedelta
+from urllib.parse import urlparse
 
-from cms.models import CMSPlugin
-from cms.utils import get_language_from_request
 from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import signals
+from django.urls import Resolver404, resolve
 from django.utils import timezone
 
-from .compat import CMS_GTE_36
+from cms.utils import get_language_from_request
+
 from .utils import get_plugin_fields, get_plugin_model
 
+# The CMS object endpoints (edit / preview / structure) all render the same
+# editable object. They live at different URLs, and the structure board even
+# rewrites the browser path to the structure URL (history.replaceState), so an
+# operation's recorded path depends on which mode it was performed in.
+OBJECT_ENDPOINT_URL_NAMES = {
+    'cms_placeholder_render_object_edit',
+    'cms_placeholder_render_object_preview',
+    'cms_placeholder_render_object_structure',
+}
 
-def delete_plugins(placeholder, plugin_ids, nested=True):
-    # With plugins, we can't do queryset.delete()
-    # because this would trigger a bunch of internal
-    # cms signals.
-    # Instead, delete each plugin individually and turn off
-    # position reordering using the _no_reorder trick.
-    plugins = placeholder.cmsplugin_set.filter(pk__in=plugin_ids).order_by("-depth").select_related()
 
-    bound_plugins = get_bound_plugins(plugins)
+def get_operation_origin(path):
+    """
+    Canonicalises an operation origin so that the edit, preview and structure
+    endpoints of the same object all map to a single value of the form
+    ``"<content_type_id>:<object_id>"``.
 
-    for plugin in bound_plugins:
-        plugin._no_reorder = True
+    Falls back to the plain request path for anything that is not a CMS object
+    endpoint (e.g. legacy/static placeholder editing), preserving the previous
+    behaviour for those cases.
+    """
+    path = urlparse(path).path
 
-        if hasattr(plugin, "cmsplugin_ptr"):
-            plugin.cmsplugin_ptr._no_reorder = True
+    try:
+        match = resolve(path)
+    except Resolver404:
+        return path
 
-        # When the nested option is False
-        # avoid queries by preventing the cms from
-        # recalculating the child counter of this plugin's
-        # parent (for which there's none).
-        plugin.delete(no_mp=not nested)
+    if match.url_name in OBJECT_ENDPOINT_URL_NAMES:
+        # The object endpoints capture (content_type_id, object_id). They use
+        # positional groups, but fall back to named kwargs to be safe.
+        if len(match.args) >= 2:
+            content_type_id, object_id = match.args[0], match.args[1]
+        else:
+            content_type_id = match.kwargs.get('content_type_id')
+            object_id = match.kwargs.get('object_id')
+        if content_type_id and object_id:
+            return '{}:{}'.format(content_type_id, object_id)
+    return path
+
+
+def delete_plugins(placeholder, plugin_ids):
+    # plugin_ids contains the ids of subtree roots.
+    # Placeholder.delete_plugin cascades to descendants and closes
+    # the position gap left behind by the deleted subtree.
+    # Iterate in reverse position order so earlier deletions don't
+    # shift the positions of plugins still queued for deletion.
+    plugins = (
+        placeholder
+        .cmsplugin_set
+        .filter(pk__in=plugin_ids)
+        .order_by('-position')
+    )
+
+    for plugin in plugins:
+        placeholder.delete_plugin(plugin)
 
 
 def get_bound_plugins(plugins):
@@ -62,16 +96,16 @@ def get_plugin_data(plugin, only_meta=False):
         custom_data = None
     else:
         plugin_fields = get_plugin_fields(plugin.plugin_type)
-        _plugin_data = serializers.serialize("python", (plugin,), fields=plugin_fields)[0]
-        custom_data = _plugin_data["fields"]
+        _plugin_data = serializers.serialize('python', (plugin,), fields=plugin_fields)[0]
+        custom_data = _plugin_data['fields']
 
     plugin_data = {
-        "pk": plugin.pk,
-        "creation_date": plugin.creation_date,
-        "position": plugin.position,
-        "plugin_type": plugin.plugin_type,
-        "parent_id": plugin.parent_id,
-        "data": custom_data,
+        'pk': plugin.pk,
+        'creation_date': plugin.creation_date,
+        'position': plugin.position,
+        'plugin_type': plugin.plugin_type,
+        'parent_id': plugin.parent_id,
+        'data': custom_data,
     }
     return plugin_data
 
@@ -104,9 +138,9 @@ def get_operations_from_request(request, path=None, language=None):
     from .models import PlaceholderOperation
 
     if not language:
-        language = get_language_from_request(language)
+        language = get_language_from_request(request)
 
-    origin = path or request.path
+    origin = get_operation_origin(path or request.path)
 
     # This is controversial :/
     # By design, we don't let undo/redo span longer than a day.
@@ -125,32 +159,3 @@ def get_operations_from_request(request, path=None, language=None):
         is_archived=False,
     )
     return queryset
-
-
-def disable_cms_plugin_signals(func):
-    # Skip this if we are using django CMS >= 3.6
-    if CMS_GTE_36:
-        return func
-
-    from cms.signals import post_delete_plugins, pre_delete_plugins, pre_save_plugins
-
-    # The wrapped function NEEDS to set _no_reorder on any bound plugin instance
-    # otherwise this does nothing because it only disconnects signals
-    # for the cms.CMSPlugin class, not its subclasses
-    plugin_signals = (
-        (signals.pre_delete, pre_delete_plugins, "cms_pre_delete_plugin", CMSPlugin),
-        (signals.pre_save, pre_save_plugins, "cms_pre_save_plugin", CMSPlugin),
-        (signals.post_delete, post_delete_plugins, "cms_post_delete_plugin", CMSPlugin),
-    )
-
-    def wrapper(*args, **kwargs):
-        for signal, handler, dispatch_id, model_class in plugin_signals:
-            signal.disconnect(handler, sender=model_class, dispatch_uid=dispatch_id)
-            signal.disconnect(handler, sender=model_class)
-
-        func(*args, **kwargs)
-
-        for signal, handler, dispatch_id, model_class in plugin_signals:
-            signal.connect(handler, sender=model_class, dispatch_uid=dispatch_id)
-
-    return wrapper

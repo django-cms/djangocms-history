@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Adds undo/redo functionality to django CMS"
 readme = "README.rst"
 license = "BSD-3-Clause"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 authors = [{ name = "Divio AG", email = "info@divio.ch" }]
 maintainers = [
     { name = "Django CMS Association and contributors", email = "info@django-cms.org" },
@@ -20,24 +20,26 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Framework :: Django",
-    "Framework :: Django :: 3.2",
     "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
     "Framework :: Django CMS",
-    "Framework :: Django CMS :: 3.11",
     "Framework :: Django CMS :: 4.1",
+    "Framework :: Django CMS :: 5.0",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
     "Topic :: Software Development",
     "Topic :: Software Development :: Libraries",
 ]
-dependencies = ["django>=3.2,<4.3", "django-cms>=3.11,<4.0"]
+dependencies = ["django-cms>=4.1"]
 
-optional-dependencies.test = ["pytest", "pytest-django"]
-
+optional-dependencies.test = ["coverage", "pytest", "pytest-django"]
 
 [project.urls]
 Homepage = "https://github.com/django-cms/djangocms-history"
@@ -53,6 +55,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["djangocms_history*"]
 
 [tool.setuptools.package-data]
 "djangocms_history" = [
@@ -64,21 +67,27 @@ where = ["."]
 ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py39"
 line-length = 119
-exclude = ["djangocms_history/migrations", "tests/fixtures"]
+exclude = [
+    "djangocms_history/migrations",
+    "tests/link_migrations",
+    "tests/manytomany_migrations",
+]
 
 [tool.ruff.lint]
-select = ["I"]
-mccabe.max-complexity = 5
-ignore = []
+select = ["E", "F", "W", "I"]
 
-[tool.isort]
-line_length = 119
-known_first_party = ["djangocms_history"]
+[tool.ruff.lint.isort]
+known-first-party = ["djangocms_history"]
+section-order = ["future", "standard-library", "django", "cms", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+django = ["django"]
+cms = ["cms", "menus"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.settings"
-python_files = ["tests.py", "test_*.py"]
+python_files = ["test_*.py"]
 testpaths = ["tests"]
 pythonpath = ["."]
