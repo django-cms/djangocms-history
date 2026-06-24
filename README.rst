@@ -28,7 +28,7 @@ improvements will be introduced in future releases.
 Contribute to this project and win rewards
 *******************************************
 
-Because this is a an open-source project, we welcome everyone to
+Because this is an open-source project, we welcome everyone to
 `get involved in the project <https://www.django-cms.org/en/contribute/>`_ and
 `receive a reward <https://www.django-cms.org/en/bounty-program/>`_ for their contribution.
 Become part of a fantastic community and help us make django CMS the best CMS in the world.
