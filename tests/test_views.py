@@ -265,6 +265,10 @@ class MoveOrderDataBridgeTestCase(HistoryTestCase):
             .values_list('pk', flat=True)
         )
 
+    def positions(self, data):
+        # {plugin_id: position} for every plugin described in the data bridge.
+        return {p['plugin_id']: p['position'] for p in data['plugins']}
+
     def test_move_a_after_b_then_undo(self):
         a = self.add_plugin(name='a')  # position 1
         b = self.add_plugin(name='b')  # position 2
@@ -283,8 +287,9 @@ class MoveOrderDataBridgeTestCase(HistoryTestCase):
             self.assertEqual(data['action'], 'move')
             self.assertEqual(data['plugin_id'], a.pk)
             self.assertEqual(data['target_position'], 1)
-            self.assertEqual(data['plugins'][0]['plugin_id'], a.pk)
-            self.assertEqual(data['plugins'][0]['position'], 1)
+            # 'plugins' describes the WHOLE placeholder so the client refreshes
+            # every cached position (not just the moved plugin's).
+            self.assertEqual(self.positions(data), {a.pk: 1, b.pk: 2})
             # plugin_order tells the structure board the full restored order,
             # so it can re-position the moved node (the DOM is still b, a).
             self.assertEqual(data['plugin_order'], [a.pk, b.pk])
@@ -309,9 +314,31 @@ class MoveOrderDataBridgeTestCase(HistoryTestCase):
             self.assertEqual(data['action'], 'move')
             self.assertEqual(data['plugin_id'], b.pk)
             self.assertEqual(data['target_position'], 2)
-            self.assertEqual(data['plugins'][0]['plugin_id'], b.pk)
-            self.assertEqual(data['plugins'][0]['position'], 2)
+            self.assertEqual(self.positions(data), {a.pk: 1, b.pk: 2})
             # plugin_order tells the structure board the full restored order,
             # so it can re-position the moved node (the DOM is still b, a).
             self.assertEqual(data['plugin_order'], [a.pk, b.pk])
             self.assertIn('cms-draggable-{}'.format(b.pk), data['html'])
+
+    def test_move_to_front_undo_describes_all_sibling_positions(self):
+        # Regression: the content insert point is located from sibling
+        # positions, so the data bridge must report every plugin's restored
+        # position, not only the moved one. Moving the last plugin to the
+        # front and undoing is the case that exposes a stale sibling.
+        a = self.add_plugin(name='a')  # position 1
+        b = self.add_plugin(name='b')  # position 2
+        c = self.add_plugin(name='c')  # position 3
+
+        with self.login_user_context(self.superuser):
+            self.move_plugin_via_endpoint(c, target_position=1)  # c to front
+            self.assertEqual(self.order(), [c.pk, a.pk, b.pk])
+
+            response = self.post_undo()  # back to a, b, c
+            self.assertEqual(self.order(), [a.pk, b.pk, c.pk])
+
+            data = json.loads(response.content)
+            self.assertEqual(data['plugin_id'], c.pk)
+            # Every sibling's restored position is reported, so the moved
+            # plugin's content lands after b (not before it).
+            self.assertEqual(self.positions(data), {a.pk: 1, b.pk: 2, c.pk: 3})
+            self.assertEqual(data['plugin_order'], [a.pk, b.pk, c.pk])

@@ -128,6 +128,93 @@ class UndoRedoTestCase(UndoRedoRoundTripMixin, HistoryTestCase):
             self.move_plugin_via_endpoint(first, target_position=3)
             self.assert_round_trip()
 
+    def assert_tree_invariant(self):
+        # The position attribute must stay healthy after a move replay:
+        # positions are contiguous 1..n, and every subtree occupies a
+        # consecutive block (parents before their descendants). The latter is
+        # the invariant ``Placeholder.move_plugin`` relies on, so a violation
+        # would corrupt the *next* move.
+        rows = list(
+            self.placeholder.get_plugins('en')
+            .order_by('position')
+            .values_list('pk', 'parent_id', 'position')
+        )
+        positions = [position for _, _, position in rows]
+        self.assertEqual(positions, list(range(1, len(rows) + 1)))
+
+        position_by_pk = {pk: position for pk, _, position in rows}
+        for pk, parent_id, position in rows:
+            if parent_id is not None:
+                self.assertGreater(
+                    position, position_by_pk[parent_id],
+                    'plugin %s precedes its parent %s' % (pk, parent_id),
+                )
+
+    def test_restore_subtree_in_middle_keeps_tree_healthy(self):
+        # Undo of a delete restores the subtree via _restore_archived_plugins
+        # (core internals _shift_plugin_positions + _recalculate_plugin_positions).
+        # Deleting a nested subtree in the MIDDLE means the restore must shift the
+        # suffix back out and slot the block in without splitting any subtree.
+        self.add_plugin(name='root a')
+        middle = self.add_plugin(name='middle parent')
+        child = self.add_plugin(parent=middle, name='child')
+        self.add_plugin(parent=child, name='grandchild')
+        self.add_plugin(name='root c')
+        self.snapshot_before()
+
+        with self.login_user_context(self.superuser):
+            self.delete_plugin_via_endpoint(middle)
+            self.assert_tree_invariant()  # tree healthy after the delete
+
+            self.undo()  # restore the subtree in the middle
+            self.assert_tree_invariant()
+            self.assertEqual(self.tree(self.placeholder), self.before[0])
+
+            self.redo()  # delete again
+            self.assert_tree_invariant()
+
+    def test_restore_under_surviving_parent_keeps_tree_healthy(self):
+        # Restore a nested subtree whose parent is NOT part of the archived set:
+        # the restore must resolve the surviving parent and keep the block
+        # consecutive among its surviving siblings.
+        parent = self.add_plugin(name='surviving parent')
+        target = self.add_plugin(parent=parent, name='delete me')
+        self.add_plugin(parent=target, name='nested grandchild')
+        self.add_plugin(parent=parent, name='surviving sibling')
+        self.snapshot_before()
+
+        with self.login_user_context(self.superuser):
+            self.delete_plugin_via_endpoint(target)
+            self.assert_tree_invariant()
+
+            self.undo()  # restore under the surviving parent
+            self.assert_tree_invariant()
+            self.assertEqual(self.tree(self.placeholder), self.before[0])
+
+            self.redo()
+            self.assert_tree_invariant()
+
+    def test_move_subtree_root_within_placeholder_keeps_tree_healthy(self):
+        # Moving a root that has a nested subtree, then undoing/redoing, must
+        # leave the position tree contiguous and the subtree consecutive.
+        self.add_plugin(name='first')
+        parent = self.add_plugin(name='parent')
+        child = self.add_plugin(parent=parent, name='child')
+        self.add_plugin(parent=child, name='grandchild')
+        self.add_plugin(name='last')
+        self.snapshot_before()
+
+        with self.login_user_context(self.superuser):
+            self.move_plugin_via_endpoint(parent, target_position=1)
+            self.assert_tree_invariant()
+
+            self.undo()
+            self.assert_tree_invariant()
+            self.assertEqual(self.tree(self.placeholder), self.before[0])
+
+            self.redo()
+            self.assert_tree_invariant()
+
     def test_move_plugin_into_parent(self):
         parent = self.add_plugin(name='parent')
         plugin = self.add_plugin(name='standalone')

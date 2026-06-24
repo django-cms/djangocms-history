@@ -182,6 +182,22 @@ class UndoRedoView(DetailView):
 
         data = get_plugin_tree(request, moved_plugins, target_plugin=moved_plugins[0])
 
+        # ``get_plugin_tree`` only lists the moved subtree in ``plugins``. The
+        # frontend rebuilds each listed plugin's cached position from this list
+        # (``_updateRegistry``) and then locates the content insert point from
+        # the *siblings'* positions (``_findNextElement``). After a drag those
+        # positions were already refreshed in the browser, but after undo/redo
+        # they are stale, so any sibling not listed here keeps a wrong position
+        # and the moved plugin's content lands in the wrong place. Re-describe
+        # the whole placeholder so every position is corrected.
+        all_plugins = list(
+            target_placeholder
+            .get_plugins(self.object.language)
+            .order_by('position')
+        )
+        if all_plugins:
+            data['plugins'] = get_plugin_tree(request, all_plugins)['plugins']
+
         # The plugin's previous parent (captured before the replay) lost a
         # child, so re-render its content too. This is what refreshes the
         # source location on cross-placeholder / un-nesting moves.
@@ -231,7 +247,9 @@ class UndoRedoView(DetailView):
         )
 
     def _capture_move_old_parent_id(self) -> int | None:
-        plugin_id = self.object.get_move_plugin_id()
+        plugin_id = None
+        if self.object:
+            plugin_id = self.object.get_move_plugin_id()
 
         if plugin_id is None:
             return None
