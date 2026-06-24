@@ -1,5 +1,9 @@
-import json
+from __future__ import annotations
 
+import json
+from typing import Any
+
+from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils.translation import gettext
 
@@ -13,12 +17,21 @@ from .helpers import (
     get_inactive_operation,
     get_operations_from_request,
 )
+from .models import PlaceholderOperation
 
 
 class AjaxButton(BaseButton):
     template = 'djangocms_history/toolbar/ajax_button.html'
 
-    def __init__(self, name, url, data, active=False, disabled=False, button_type=""):
+    def __init__(
+        self,
+        name: str,
+        url: str,
+        data: dict[str, Any],
+        active: bool = False,
+        disabled: bool = False,
+        button_type: str = "",
+    ) -> None:
         self.name = name
         self.url = url
         self.active = active
@@ -26,7 +39,7 @@ class AjaxButton(BaseButton):
         self.data = data
         self.button_type = button_type
 
-    def get_context(self):
+    def get_context(self) -> dict[str, Any]:
         return {
             'name': self.name,
             'active': self.active,
@@ -40,7 +53,7 @@ class AjaxButton(BaseButton):
 @toolbar_pool.register
 class UndoRedoToolbar(CMSToolbar):
 
-    def populate(self):
+    def populate(self) -> None:
         if not self.toolbar.edit_mode_active:
             return
 
@@ -56,7 +69,7 @@ class UndoRedoToolbar(CMSToolbar):
         self.active_operation = self.get_active_operation()
         self.add_buttons()
 
-    def get_operations(self):
+    def get_operations(self) -> QuerySet:
         operations = get_operations_from_request(
             self.request,
             path=self.toolbar.request_path,
@@ -64,11 +77,11 @@ class UndoRedoToolbar(CMSToolbar):
         )
         return operations
 
-    def get_active_operation(self):
+    def get_active_operation(self) -> PlaceholderOperation | None:
         operations = self.get_operations()
         return get_active_operation(operations)
 
-    def get_inactive_operation(self):
+    def get_inactive_operation(self) -> PlaceholderOperation | None:
         operations = self.get_operations()
         operation = get_inactive_operation(
             operations,
@@ -76,13 +89,19 @@ class UndoRedoToolbar(CMSToolbar):
         )
         return operation
 
-    def add_buttons(self):
+    def add_buttons(self) -> None:
         container = ButtonList(side=self.toolbar.RIGHT)
         container.buttons.append(self.get_undo_button())
         container.buttons.append(self.get_redo_button())
         self.toolbar.add_item(container)
 
-    def _get_ajax_button(self, name, url, button_type, disabled=True):
+    def _get_ajax_button(
+        self,
+        name: str,
+        url: str,
+        button_type: str,
+        disabled: bool = True,
+    ) -> AjaxButton:
         data = {
             'language': self.toolbar.toolbar_language,
             'cms_path': self.toolbar.request_path,
@@ -98,10 +117,10 @@ class UndoRedoToolbar(CMSToolbar):
         )
         return button
 
-    def _operation_is_applicable(self, operation):
-        return bool(operation) and operation.is_editable(self.request.user)
+    def _operation_is_applicable(self, operation: PlaceholderOperation | None) -> bool:
+        return operation is not None and operation.is_editable(self.request.user)
 
-    def get_undo_button(self):
+    def get_undo_button(self) -> AjaxButton:
         url = reverse('admin:djangocms_history_undo')
         disabled = not self._operation_is_applicable(self.active_operation)
         button = self._get_ajax_button(
@@ -112,7 +131,7 @@ class UndoRedoToolbar(CMSToolbar):
         )
         return button
 
-    def get_redo_button(self):
+    def get_redo_button(self) -> AjaxButton:
         operation = self.get_inactive_operation()
         url = reverse('admin:djangocms_history_redo')
         disabled = not self._operation_is_applicable(operation)

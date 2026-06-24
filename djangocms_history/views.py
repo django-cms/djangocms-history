@@ -1,15 +1,19 @@
+from __future__ import annotations
+
 import json
 
 from django.contrib import admin
 from django.core.exceptions import PermissionDenied
+from django.db.models import QuerySet
 from django.http import (
+    HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseForbidden,
 )
 from django.views.generic import DetailView
 
-from cms.models import CMSPlugin
+from cms.models import CMSPlugin, Placeholder
 
 try:
     from cms.toolbar.utils import (
@@ -41,7 +45,7 @@ class UndoRedoView(DetailView):
     http_method_names = ['post']
     form_class = UndoRedoForm
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         user = request.user
 
         if not (user.is_active and user.is_staff):
@@ -88,7 +92,7 @@ class UndoRedoView(DetailView):
 
         return HttpResponse(status=204)
 
-    def get_close_frame_response(self, request):
+    def get_close_frame_response(self, request: HttpRequest) -> HttpResponse | None:
         target = self.object.get_close_frame_target()
 
         if target is None:
@@ -110,7 +114,13 @@ class UndoRedoView(DetailView):
 
         return plugin_admin.render_close_frame(request, instance, action=action)
 
-    def get_delete_frame_response(self, request, plugin_id, plugin_type, parent_id):
+    def get_delete_frame_response(
+        self,
+        request: HttpRequest,
+        plugin_id: int,
+        plugin_type: str,
+        parent_id: int | None,
+    ) -> HttpResponse | None:
         from cms.plugin_pool import plugin_pool
 
         try:
@@ -136,7 +146,7 @@ class UndoRedoView(DetailView):
             extra_data={'deleted': True, 'plugin_id': plugin_id},
         )
 
-    def get_move_response(self, request):
+    def get_move_response(self, request: HttpRequest) -> HttpResponse | None:
         """
         Builds the move data bridge for an undone/redone move.
 
@@ -220,7 +230,7 @@ class UndoRedoView(DetailView):
             content_type='application/json',
         )
 
-    def _capture_move_old_parent_id(self):
+    def _capture_move_old_parent_id(self) -> int | None:
         plugin_id = self.object.get_move_plugin_id()
 
         if plugin_id is None:
@@ -233,7 +243,7 @@ class UndoRedoView(DetailView):
             .first()
         )
 
-    def _get_move_source_placeholder_id(self, target_placeholder):
+    def _get_move_source_placeholder_id(self, target_placeholder: Placeholder) -> int:
         # The operation touches one placeholder (same-placeholder move) or two
         # (cross-placeholder move, recorded as MOVE_OUT + MOVE_IN actions).
         # The source is the placeholder the plugin is no longer in.
@@ -246,7 +256,7 @@ class UndoRedoView(DetailView):
             return target_placeholder.pk
         return placeholder_ids.pop()
 
-    def get_object(self, queryset=None):
+    def get_object(self, queryset: QuerySet | None = None) -> PlaceholderOperation | None:
         if queryset is None:
             queryset = self.get_queryset()
 
@@ -256,7 +266,7 @@ class UndoRedoView(DetailView):
             operation = get_inactive_operation(queryset)
         return operation
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         data = self.form.cleaned_data
         queryset = get_operations_from_request(
             self.request,
