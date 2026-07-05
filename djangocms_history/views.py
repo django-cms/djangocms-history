@@ -237,9 +237,9 @@ class UndoRedoView(DetailView):
         # The operation touches one placeholder (same-placeholder move) or two
         # (cross-placeholder move, recorded as MOVE_OUT + MOVE_IN actions).
         # The source is the placeholder the plugin is no longer in.
-        placeholder_ids = set(
-            self.object.actions.values_list('placeholder_id', flat=True)
-        )
+        placeholder_ids = {
+            action.placeholder_id for action in self.object.cached_actions
+        }
         placeholder_ids.discard(target_placeholder.pk)
 
         if not placeholder_ids:

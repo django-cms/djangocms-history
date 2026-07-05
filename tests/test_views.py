@@ -3,9 +3,11 @@ import re
 from unittest import skipUnless
 from unittest.mock import patch
 
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
-from djangocms_history.models import PlaceholderOperation
+from djangocms_history.models import PlaceholderAction, PlaceholderOperation
 from djangocms_history.views import SUPPORTS_DATA_BRIDGE
 
 from .base import HistoryTestCase
@@ -93,6 +95,49 @@ class UndoRedoViewTestCase(HistoryTestCase):
             # The operation was not applied
             self.assertTrue(self.latest_operation().is_applied)
             self.assertEqual(len(self.tree(self.placeholder)), 1)
+
+
+class ActionQueryCountTestCase(HistoryTestCase):
+    """
+    An undo/redo request inspects the operation's actions several times
+    (editability check, replay, response building). The actions must be
+    fetched from the database exactly once per request.
+    """
+
+    def assert_single_action_fetch(self, post):
+        table = PlaceholderAction._meta.db_table
+
+        with CaptureQueriesContext(connection) as ctx:
+            response = post()
+
+        self._assert_undo_redo_ok(response, 'undo/redo')
+        action_selects = [
+            query['sql'] for query in ctx.captured_queries
+            if query['sql'].startswith('SELECT') and table in query['sql']
+        ]
+        self.assertEqual(
+            len(action_selects), 1,
+            'expected a single action fetch, got:\n{}'.format(
+                '\n'.join(action_selects),
+            ),
+        )
+
+    def test_undo_and_redo_of_add_fetch_actions_once(self):
+        with self.login_user_context(self.superuser):
+            self.add_plugin_via_endpoint()
+            self.assert_single_action_fetch(self.post_undo)
+            self.assert_single_action_fetch(self.post_redo)
+
+    def test_undo_and_redo_of_move_fetch_actions_once(self):
+        # A move exercises the most action inspections in one request:
+        # editability, old-parent capture, replay and the move data bridge.
+        self.add_plugin(name='first')
+        second = self.add_plugin(name='second')
+
+        with self.login_user_context(self.superuser):
+            self.move_plugin_via_endpoint(second, target_position=1)
+            self.assert_single_action_fetch(self.post_undo)
+            self.assert_single_action_fetch(self.post_redo)
 
 
 @skipUnless(SUPPORTS_DATA_BRIDGE, 'data bridge requires django CMS 5.1+')

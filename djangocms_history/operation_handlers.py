@@ -1,5 +1,7 @@
+from cms.utils.plugins import get_bound_plugins
+
 from . import actions
-from .helpers import get_bound_plugins, get_plugin_data
+from .helpers import get_plugin_data
 
 # A note on the kwargs sent by the django CMS operation signals (4.1 / 5.x):
 #

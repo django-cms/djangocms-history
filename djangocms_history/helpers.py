@@ -55,10 +55,8 @@ def get_operation_origin(path):
 
 def delete_plugins(placeholder, plugin_ids):
     # plugin_ids contains the ids of subtree roots.
-    # Placeholder.delete_plugin cascades to descendants and closes
-    # the position gap left behind by the deleted subtree.
-    # Iterate in reverse position order so earlier deletions don't
-    # shift the positions of plugins still queued for deletion.
+    # Placeholder.delete_plugin(s) cascades to descendants and closes
+    # the position gap left behind by the deleted subtrees.
     plugins = (
         placeholder
         .cmsplugin_set
@@ -66,8 +64,15 @@ def delete_plugins(placeholder, plugin_ids):
         .order_by('-position')
     )
 
-    for plugin in plugins:
-        placeholder.delete_plugin(plugin)
+    if hasattr(placeholder, 'delete_plugins'):
+        # django CMS 5.1+: one bulk delete and a single position
+        # re-compaction, instead of one of each per subtree root.
+        placeholder.delete_plugins(plugins)
+    else:
+        # Iterate in reverse position order so earlier deletions don't
+        # shift the positions of plugins still queued for deletion.
+        for plugin in plugins:
+            placeholder.delete_plugin(plugin)
 
 
 def get_bound_plugins(plugins):

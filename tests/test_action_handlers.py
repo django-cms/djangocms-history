@@ -1,4 +1,9 @@
-from cms.models import CMSPlugin
+from unittest import skipUnless
+
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+
+from cms.models import CMSPlugin, Placeholder
 
 from djangocms_history import actions
 from djangocms_history.action_handlers import (
@@ -157,6 +162,35 @@ class ActionHandlerPrimitivesTestCase(HistoryTestCase):
         action = self.create_action()
 
         _delete_plugins(action, plugin_ids=[first.pk, second.pk])
+
+        tree = self.tree(self.placeholder)
+        self.assertEqual([(row[0], row[2]) for row in tree], [(keeper.pk, 1)])
+
+    @skipUnless(
+        hasattr(Placeholder, 'delete_plugins'),
+        'bulk plugin delete requires django CMS 5.1+',
+    )
+    def test_delete_plugins_issues_single_bulk_delete(self):
+        roots = [self.add_plugin(name=f'root {i}') for i in range(3)]
+        self.add_plugin(parent=roots[0], name='child')
+        keeper = self.add_plugin(name='keeper')
+        action = self.create_action()
+
+        table = CMSPlugin._meta.db_table
+
+        with CaptureQueriesContext(connection) as ctx:
+            _delete_plugins(action, plugin_ids=[root.pk for root in roots])
+
+        deletes = [
+            query['sql'] for query in ctx.captured_queries
+            if query['sql'].startswith('DELETE') and table in query['sql']
+        ]
+        # All subtrees go in one bulk delete (followed by a single position
+        # re-compaction), not one delete + re-compaction per root.
+        self.assertEqual(
+            len(deletes), 1,
+            'expected a single bulk delete, got:\n{}'.format('\n'.join(deletes)),
+        )
 
         tree = self.tree(self.placeholder)
         self.assertEqual([(row[0], row[2]) for row in tree], [(keeper.pk, 1)])

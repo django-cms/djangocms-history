@@ -8,6 +8,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models, transaction
 from django.db.models import Q
 from django.dispatch import receiver
+from django.utils.functional import cached_property
 
 from cms import operations
 from cms.models import Placeholder
@@ -355,6 +356,16 @@ class PlaceholderOperation(models.Model):
     def set_post_action_data(self, action, data):
         self.actions.filter(action=action).update(post_action_data=dump_json(data))
 
+    @cached_property
+    def cached_actions(self):
+        """
+        The operation's actions with their placeholders, fetched once and
+        ordered by ``order``. The undo/redo paths inspect this small set
+        several times (editability check, replay, response building); the
+        cache keeps that to a single query.
+        """
+        return list(self.actions.select_related('placeholder'))
+
     def is_editable(self, user):
         """
         Returns whether all placeholders touched by this operation are
@@ -363,9 +374,16 @@ class PlaceholderOperation(models.Model):
         otherwise locked) versions; undoing/redoing operations on such
         content would corrupt it.
         """
+        # An operation's actions can share a placeholder (e.g. a
+        # same-placeholder move); check_source resolves the placeholder's
+        # source object, so only check each placeholder once.
+        placeholders = {
+            action.placeholder_id: action.placeholder
+            for action in self.cached_actions
+        }
         return all(
-            action.placeholder.check_source(user)
-            for action in self.actions.select_related('placeholder')
+            placeholder.check_source(user)
+            for placeholder in placeholders.values()
         )
 
     #: Operation types that center on a single plugin subtree. After an
@@ -399,10 +417,10 @@ class PlaceholderOperation(models.Model):
         if action is None:
             return None
 
-        operation_action = self.actions.first()
-
-        if operation_action is None:
+        if not self.cached_actions:
             return None
+
+        operation_action = self.cached_actions[0]
 
         for data in (
             operation_action.get_post_action_data(),
@@ -422,7 +440,7 @@ class PlaceholderOperation(models.Model):
         if self.operation_type != operations.MOVE_PLUGIN:
             return None
 
-        for operation_action in self.actions.all():
+        for operation_action in self.cached_actions:
             for data in (
                 operation_action.get_pre_action_data(),
                 operation_action.get_post_action_data(),
@@ -433,7 +451,7 @@ class PlaceholderOperation(models.Model):
 
     @transaction.atomic
     def undo(self):
-        actions = self.actions.order_by('order')
+        actions = self.cached_actions
 
         for action in actions:
             action.undo()
@@ -448,7 +466,7 @@ class PlaceholderOperation(models.Model):
 
     @transaction.atomic
     def redo(self):
-        actions = self.actions.order_by('-order')
+        actions = list(reversed(self.cached_actions))
 
         for action in actions:
             action.redo()
