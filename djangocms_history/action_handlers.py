@@ -1,9 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Iterable
+
 from cms.models import CMSPlugin
 
 from .helpers import delete_plugins
 
+if TYPE_CHECKING:
+    from .models import PlaceholderAction
 
-def _delete_plugins(action, plugin_ids):
+
+def _delete_plugins(action: PlaceholderAction, plugin_ids: Iterable[int]) -> None:
     delete_plugins(
         placeholder=action.placeholder,
         plugin_ids=plugin_ids,
@@ -11,7 +18,7 @@ def _delete_plugins(action, plugin_ids):
     action.placeholder.clear_cache(action.language)
 
 
-def _restore_archived_plugins(action, data):
+def _restore_archived_plugins(action: PlaceholderAction, data: dict[str, Any]) -> None:
     """
     Recreates the archived plugins (a subtree or a list of subtrees)
     in the action's placeholder, at their archived positions and with
@@ -76,7 +83,7 @@ def _restore_archived_plugins(action, data):
     placeholder.clear_cache(language)
 
 
-def _move_plugin(action, data):
+def _move_plugin(action: PlaceholderAction, data: dict[str, Any]) -> None:
     """
     Moves the live plugin referenced by the action data to the archived
     position (and parent) in the action's placeholder. A single
@@ -110,7 +117,7 @@ def _move_plugin(action, data):
         target_placeholder.clear_cache(action.language)
 
 
-def undo_add_plugin(action):
+def undo_add_plugin(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
     parent_id = post_data['parent_id']
 
@@ -122,12 +129,12 @@ def undo_add_plugin(action):
     _delete_plugins(action, plugin_ids=plugin_ids)
 
 
-def redo_add_plugin(action):
+def redo_add_plugin(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
     _restore_archived_plugins(action, data=post_data)
 
 
-def undo_change_plugin(action):
+def undo_change_plugin(action: PlaceholderAction) -> None:
     archived_plugins = action.get_pre_action_data()['plugins']
 
     for plugin in archived_plugins:
@@ -135,7 +142,7 @@ def undo_change_plugin(action):
             plugin.model.objects.filter(pk=plugin.pk).update(**plugin.data)
 
 
-def redo_change_plugin(action):
+def redo_change_plugin(action: PlaceholderAction) -> None:
     archived_plugins = action.get_post_action_data()['plugins']
 
     for plugin in archived_plugins:
@@ -143,26 +150,26 @@ def redo_change_plugin(action):
             plugin.model.objects.filter(pk=plugin.pk).update(**plugin.data)
 
 
-def undo_delete_plugin(action):
+def undo_delete_plugin(action: PlaceholderAction) -> None:
     pre_data = action.get_pre_action_data()
     _restore_archived_plugins(action, data=pre_data)
 
 
-def redo_delete_plugin(action):
+def redo_delete_plugin(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
     plugin_ids = [plugin.pk for plugin in post_data['plugins']]
     _delete_plugins(action, plugin_ids=plugin_ids)
 
 
-def undo_move_plugin(action):
+def undo_move_plugin(action: PlaceholderAction) -> None:
     _move_plugin(action, data=action.get_pre_action_data())
 
 
-def redo_move_plugin(action):
+def redo_move_plugin(action: PlaceholderAction) -> None:
     _move_plugin(action, data=action.get_post_action_data())
 
 
-def undo_move_out_plugin(action):
+def undo_move_out_plugin(action: PlaceholderAction) -> None:
     # Moves the plugin from the placeholder it was moved to
     # back into this action's (source) placeholder.
     # This single move also restores the positions in the
@@ -170,33 +177,33 @@ def undo_move_out_plugin(action):
     _move_plugin(action, data=action.get_pre_action_data())
 
 
-def redo_move_out_plugin(action):
+def redo_move_out_plugin(action: PlaceholderAction) -> None:
     # No-op. Operations are redone in descending action order, so the
     # MOVE_IN_PLUGIN action (order=2) has already moved the plugin to
     # the target placeholder and fixed both placeholders' positions.
     pass
 
 
-def undo_move_in_plugin(action):
+def undo_move_in_plugin(action: PlaceholderAction) -> None:
     # No-op. Operations are undone in ascending action order, so the
     # MOVE_OUT_PLUGIN action (order=1) has already moved the plugin back
     # to the source placeholder and fixed both placeholders' positions.
     pass
 
 
-def redo_move_in_plugin(action):
+def redo_move_in_plugin(action: PlaceholderAction) -> None:
     # Moves the plugin from the source placeholder back into this
     # action's (target) placeholder.
     _move_plugin(action, data=action.get_post_action_data())
 
 
-def undo_move_plugin_in_to_clipboard(action):
+def undo_move_plugin_in_to_clipboard(action: PlaceholderAction) -> None:
     # clear the clipboard
     action.placeholder.clear()
     action.placeholder.clear_cache(action.language)
 
 
-def redo_move_plugin_in_to_clipboard(action):
+def redo_move_plugin_in_to_clipboard(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
 
     # clear the clipboard
@@ -209,7 +216,7 @@ def redo_move_plugin_in_to_clipboard(action):
     _restore_archived_plugins(action, data=post_data)
 
 
-def undo_move_plugin_out_to_clipboard(action):
+def undo_move_plugin_out_to_clipboard(action: PlaceholderAction) -> None:
     pre_data = action.get_pre_action_data()
 
     # Plugin was moved to the clipboard.
@@ -220,14 +227,14 @@ def undo_move_plugin_out_to_clipboard(action):
     _restore_archived_plugins(action, data=pre_data)
 
 
-def redo_move_plugin_out_to_clipboard(action):
+def redo_move_plugin_out_to_clipboard(action: PlaceholderAction) -> None:
     pre_data = action.get_pre_action_data()
     root_pks = [plugin.pk for plugin in pre_data['plugins']
                 if plugin.parent_id == pre_data['parent_id']]
     _delete_plugins(action, plugin_ids=root_pks)
 
 
-def undo_paste_plugin(action):
+def undo_paste_plugin(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
     parent_id = post_data['parent_id']
     plugin_ids = [plugin.pk for plugin in post_data['plugins']
@@ -235,40 +242,40 @@ def undo_paste_plugin(action):
     _delete_plugins(action, plugin_ids=plugin_ids)
 
 
-def redo_paste_plugin(action):
+def redo_paste_plugin(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
     _restore_archived_plugins(action, data=post_data)
 
 
-def undo_paste_placeholder(action):
+def undo_paste_placeholder(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
     plugin_ids = [plugin.pk for plugin in post_data['plugins']
                   if not plugin.parent_id]
     _delete_plugins(action, plugin_ids=plugin_ids)
 
 
-def redo_paste_placeholder(action):
+def redo_paste_placeholder(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
     _restore_archived_plugins(action, data=post_data)
 
 
-def undo_add_plugins_from_placeholder(action):
+def undo_add_plugins_from_placeholder(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
     plugin_ids = [plugin.pk for plugin in post_data['plugins']
                   if not plugin.parent_id]
     _delete_plugins(action, plugin_ids=plugin_ids)
 
 
-def redo_add_plugins_from_placeholder(action):
+def redo_add_plugins_from_placeholder(action: PlaceholderAction) -> None:
     post_data = action.get_post_action_data()
     _restore_archived_plugins(action, data=post_data)
 
 
-def undo_clear_placeholder(action):
+def undo_clear_placeholder(action: PlaceholderAction) -> None:
     pre_data = action.get_pre_action_data()
     _restore_archived_plugins(action, data=pre_data)
 
 
-def redo_clear_placeholder(action):
+def redo_clear_placeholder(action: PlaceholderAction) -> None:
     action.placeholder.clear(action.language)
     action.placeholder.clear_cache(action.language)

@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 from collections import namedtuple
 
 from django.core.serializers import deserialize
+from django.core.serializers.base import DeserializedObject
 from django.db import transaction
 from django.utils.encoding import force_str
 from django.utils.functional import cached_property
 from django.utils.timezone import now
 
-from cms.models import CMSPlugin
+from cms.models import CMSPlugin, Placeholder
 
 from .utils import get_plugin_model
 
@@ -19,11 +22,11 @@ BaseArchivedPlugin = namedtuple(
 class ArchivedPlugin(BaseArchivedPlugin):
 
     @cached_property
-    def model(self):
+    def model(self) -> type[CMSPlugin]:
         return get_plugin_model(self.plugin_type)
 
     @cached_property
-    def deserialized_instance(self):
+    def deserialized_instance(self) -> DeserializedObject:
         data = {
             'model': force_str(self.model._meta),
             'fields': self.data,
@@ -33,7 +36,12 @@ class ArchivedPlugin(BaseArchivedPlugin):
         return list(deserialize('python', [data]))[0]
 
     @transaction.atomic
-    def restore(self, placeholder, language, parent=None):
+    def restore(
+        self,
+        placeholder: Placeholder,
+        language: str,
+        parent: CMSPlugin | None = None,
+    ) -> CMSPlugin:
         # Creates the plugin row directly at the archived (global) position.
         # The caller is responsible for having opened a large enough gap in
         # the placeholder's plugin tree beforehand and for squashing the

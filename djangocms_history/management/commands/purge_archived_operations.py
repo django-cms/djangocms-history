@@ -1,4 +1,8 @@
+from __future__ import annotations
+
+from argparse import ArgumentParser
 from datetime import timedelta
+from typing import Any
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -13,7 +17,7 @@ class Command(BaseCommand):
         'them is safe and only reclaims database space.'
     )
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
             '--days',
             type=int,
@@ -27,7 +31,7 @@ class Command(BaseCommand):
             help='Report what would be deleted without deleting anything.',
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args: Any, **options: Any) -> None:
         queryset = PlaceholderOperation.objects.filter(is_archived=True)
 
         days = options['days']
