@@ -1,16 +1,25 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from datetime import timedelta
+from typing import TYPE_CHECKING, Any, Iterable, Iterator
 from urllib.parse import urlparse
 
 from django.contrib.sites.models import Site
 from django.core import serializers
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import QuerySet
+from django.http import HttpRequest
 from django.urls import Resolver404, resolve
 from django.utils import timezone
 
+from cms.models import CMSPlugin, Placeholder
 from cms.utils import get_language_from_request
 
 from .utils import get_plugin_fields, get_plugin_model
+
+if TYPE_CHECKING:
+    from .models import PlaceholderOperation
 
 # The CMS object endpoints (edit / preview / structure) all render the same
 # editable object. They live at different URLs, and the structure board even
@@ -23,7 +32,7 @@ OBJECT_ENDPOINT_URL_NAMES = {
 }
 
 
-def get_operation_origin(path):
+def get_operation_origin(path: str) -> str:
     """
     Canonicalises an operation origin so that the edit, preview and structure
     endpoints of the same object all map to a single value of the form
@@ -53,7 +62,7 @@ def get_operation_origin(path):
     return path
 
 
-def delete_plugins(placeholder, plugin_ids):
+def delete_plugins(placeholder: Placeholder, plugin_ids: Iterable[int]) -> None:
     # plugin_ids contains the ids of subtree roots.
     # Placeholder.delete_plugin(s) cascades to descendants and closes
     # the position gap left behind by the deleted subtrees.
@@ -75,7 +84,7 @@ def delete_plugins(placeholder, plugin_ids):
             placeholder.delete_plugin(plugin)
 
 
-def get_bound_plugins(plugins):
+def get_bound_plugins(plugins: Iterable[CMSPlugin]) -> Iterator[CMSPlugin]:
     plugin_types_map = defaultdict(list)
     plugin_lookup = {}
 
@@ -96,7 +105,7 @@ def get_bound_plugins(plugins):
         yield plugin_lookup.get(plugin.pk, plugin)
 
 
-def get_plugin_data(plugin, only_meta=False):
+def get_plugin_data(plugin: CMSPlugin, only_meta: bool = False) -> dict[str, Any]:
     if only_meta:
         custom_data = None
     else:
@@ -115,7 +124,7 @@ def get_plugin_data(plugin, only_meta=False):
     return plugin_data
 
 
-def get_active_operation(operations):
+def get_active_operation(operations: QuerySet) -> PlaceholderOperation | None:
     operations = operations.filter(is_applied=True)
 
     try:
@@ -125,7 +134,10 @@ def get_active_operation(operations):
     return operation
 
 
-def get_inactive_operation(operations, active_operation=None):
+def get_inactive_operation(
+    operations: QuerySet,
+    active_operation: PlaceholderOperation | None = None,
+) -> PlaceholderOperation | None:
     active_operation = active_operation or get_active_operation(operations)
 
     if active_operation:
@@ -139,7 +151,11 @@ def get_inactive_operation(operations, active_operation=None):
     return operation
 
 
-def get_operations_from_request(request, path=None, language=None):
+def get_operations_from_request(
+    request: HttpRequest,
+    path: str | None = None,
+    language: str | None = None,
+) -> QuerySet:
     from .models import PlaceholderOperation
 
     if not language:

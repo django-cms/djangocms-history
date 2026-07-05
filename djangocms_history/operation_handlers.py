@@ -1,7 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Callable
+
+from cms.models import CMSPlugin
 from cms.utils.plugins import get_bound_plugins
 
 from . import actions
 from .helpers import get_plugin_data
+
+if TYPE_CHECKING:
+    from .models import PlaceholderOperation
 
 # A note on the kwargs sent by the django CMS operation signals (4.1 / 5.x):
 #
@@ -24,12 +32,12 @@ from .helpers import get_plugin_data
 # below therefore only store per-plugin data and parent ids.
 
 
-def _with_callback(func):
+def _with_callback(func: Callable) -> Callable:
     """
     Runs an operation callback defined in the plugin class
     for the given operation handler.
     """
-    def wrapped(*args, **kwargs):
+    def wrapped(*args: Any, **kwargs: Any) -> None:
         func(*args, **kwargs)
 
         if 'new_plugin' in kwargs:
@@ -48,7 +56,7 @@ def _with_callback(func):
     return wrapped
 
 
-def _get_subtree_data(plugin, only_meta=False):
+def _get_subtree_data(plugin: CMSPlugin, only_meta: bool = False) -> list[dict[str, Any]]:
     # Returns plugin data for the given (bound) plugin and all of its
     # descendants, ordered by position (parents before children).
     descendants = plugin.get_descendants().order_by('position')
@@ -61,7 +69,7 @@ def _get_subtree_data(plugin, only_meta=False):
 
 
 @_with_callback
-def pre_add_plugin(operation, **kwargs):
+def pre_add_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores the ID of the parent plugin where the new plugin
     # will be created.
     # The plugin itself is not saved yet at this point.
@@ -77,7 +85,7 @@ def pre_add_plugin(operation, **kwargs):
 
 
 @_with_callback
-def post_add_plugin(operation, **kwargs):
+def post_add_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores the ID of the parent plugin where the new plugin
     # was created and the plugin data for the new created plugin
     # (including its position in the placeholder).
@@ -91,7 +99,7 @@ def post_add_plugin(operation, **kwargs):
 
 
 @_with_callback
-def pre_change_plugin(operation, **kwargs):
+def pre_change_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * the plugin data before any updates
 
@@ -107,7 +115,7 @@ def pre_change_plugin(operation, **kwargs):
 
 
 @_with_callback
-def post_change_plugin(operation, **kwargs):
+def post_change_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * the plugin data with updates already applied
 
@@ -123,7 +131,7 @@ def post_change_plugin(operation, **kwargs):
 
 
 @_with_callback
-def pre_delete_plugin(operation, **kwargs):
+def pre_delete_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * the id of the parent plugin for the plugin being deleted
     #   * plugin data for the plugin being deleted and all its descendants
@@ -143,7 +151,7 @@ def pre_delete_plugin(operation, **kwargs):
 
 
 @_with_callback
-def post_delete_plugin(operation, **kwargs):
+def post_delete_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * the id of the parent plugin for the deleted plugin
     #   * plugin meta data for the deleted plugin
@@ -157,7 +165,7 @@ def post_delete_plugin(operation, **kwargs):
     operation.set_post_action_data(action=actions.DELETE_PLUGIN, data=action_data)
 
 
-def pre_move_plugin(operation, **kwargs):
+def pre_move_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Action 1 Stores
     #   * the id of the parent plugin for the plugin being moved
     #   * plugin meta data for the plugin being moved
@@ -197,7 +205,7 @@ def pre_move_plugin(operation, **kwargs):
         )
 
 
-def post_move_plugin(operation, **kwargs):
+def post_move_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Action 1 Stores
     #   * the id of the new parent plugin
     #   * plugin meta data for the moved plugin
@@ -230,7 +238,7 @@ def post_move_plugin(operation, **kwargs):
         operation.set_post_action_data(action=actions.MOVE_OUT_PLUGIN, data=action_data)
 
 
-def pre_paste_plugin(operation, **kwargs):
+def pre_paste_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * the id of the new parent plugin in the target placeholder
 
@@ -244,7 +252,7 @@ def pre_paste_plugin(operation, **kwargs):
     )
 
 
-def post_paste_plugin(operation, **kwargs):
+def post_paste_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * the id of the new parent plugin
     #   * plugin data for the pasted plugin and all its descendants
@@ -258,7 +266,7 @@ def post_paste_plugin(operation, **kwargs):
     operation.set_post_action_data(action=actions.PASTE_PLUGIN, data=action_data)
 
 
-def pre_paste_placeholder(operation, **kwargs):
+def pre_paste_placeholder(operation: PlaceholderOperation, **kwargs: Any) -> None:
     operation.create_action(
         action=actions.PASTE_PLACEHOLDER,
         language=kwargs['target_language'],
@@ -267,7 +275,7 @@ def pre_paste_placeholder(operation, **kwargs):
     )
 
 
-def post_paste_placeholder(operation, **kwargs):
+def post_paste_placeholder(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * plugin data for the pasted plugins
 
@@ -280,7 +288,7 @@ def post_paste_placeholder(operation, **kwargs):
     operation.set_post_action_data(action=actions.PASTE_PLACEHOLDER, data=action_data)
 
 
-def pre_cut_plugin(operation, **kwargs):
+def pre_cut_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Action 1 Stores
     #   * plugin data for the cut plugin and all its descendants,
     #     with positions renumbered to where they land in the clipboard
@@ -328,7 +336,7 @@ def pre_cut_plugin(operation, **kwargs):
     )
 
 
-def post_cut_plugin(operation, **kwargs):
+def post_cut_plugin(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * the id of the parent plugin for the cut plugin
 
@@ -340,7 +348,7 @@ def post_cut_plugin(operation, **kwargs):
     )
 
 
-def pre_add_plugins_from_placeholder(operation, **kwargs):
+def pre_add_plugins_from_placeholder(operation: PlaceholderOperation, **kwargs: Any) -> None:
     operation.create_action(
         action=actions.ADD_PLUGINS_FROM_PLACEHOLDER,
         language=kwargs['target_language'],
@@ -349,7 +357,7 @@ def pre_add_plugins_from_placeholder(operation, **kwargs):
     )
 
 
-def post_add_plugins_from_placeholder(operation, **kwargs):
+def post_add_plugins_from_placeholder(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * plugin data for the new plugins
 
@@ -366,7 +374,7 @@ def post_add_plugins_from_placeholder(operation, **kwargs):
     )
 
 
-def pre_clear_placeholder(operation, **kwargs):
+def pre_clear_placeholder(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * plugin data for all the plugins being deleted
 
@@ -385,7 +393,7 @@ def pre_clear_placeholder(operation, **kwargs):
     )
 
 
-def post_clear_placeholder(operation, **kwargs):
+def post_clear_placeholder(operation: PlaceholderOperation, **kwargs: Any) -> None:
     # Stores
     #   * plugin meta data for all the deleted parent-less plugins
 

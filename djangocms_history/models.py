@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 import functools
 import json
+from typing import Any
 
 from django.conf import settings
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.sites.models import Site
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.dispatch import receiver
 from django.utils.functional import cached_property
+from django.http import HttpRequest
 
 from cms import operations
 from cms.models import Placeholder
@@ -116,7 +121,7 @@ _action_handlers = {
 }
 
 
-def archive_or_delete_operations(queryset):
+def archive_or_delete_operations(queryset: QuerySet) -> None:
     """
     Retires the given operations from the undo/redo system.
 
@@ -136,7 +141,12 @@ def archive_or_delete_operations(queryset):
 
 
 @receiver(user_logged_in, dispatch_uid='archive_old_operations')
-def archive_old_operations(sender, request, user, **kwargs):
+def archive_old_operations(
+    sender: Any,
+    request: HttpRequest,
+    user: AbstractBaseUser,
+    **kwargs: Any,
+) -> None:
     """
     Retires all of the user's operations that don't match the new session.
     """
@@ -164,7 +174,7 @@ def archive_old_operations(sender, request, user, **kwargs):
 # pre_obj_operation handler also no longer worked with canonical object origins.
 
 
-def is_unrecordable_change(operation_type, kwargs):
+def is_unrecordable_change(operation_type: str, kwargs: dict[str, Any]) -> bool:
     """
     Whether the operation is a change to a plugin with a many-to-many
     relation. Such changes cannot be undone, because the snapshot is restored
@@ -178,7 +188,7 @@ def is_unrecordable_change(operation_type, kwargs):
     return plugin is not None and plugin_has_m2m(plugin.plugin_type)
 
 
-def clear_operation_history(request, site, origin):
+def clear_operation_history(request: HttpRequest, site: Site, origin: str) -> None:
     archive_or_delete_operations(
         PlaceholderOperation.objects.filter(
             site=site,
@@ -190,7 +200,7 @@ def clear_operation_history(request, site, origin):
 
 
 @receiver(pre_placeholder_operation)
-def create_placeholder_operation(sender, **kwargs):
+def create_placeholder_operation(sender: Any, **kwargs: Any) -> None:
     """
     Creates the initial placeholder operation record
     """
@@ -231,7 +241,7 @@ def create_placeholder_operation(sender, **kwargs):
 
 
 @receiver(post_placeholder_operation)
-def update_placeholder_operation(sender, **kwargs):
+def update_placeholder_operation(sender: Any, **kwargs: Any) -> None:
     """
     Updates the created placeholder operation record,
     based on the configured post operation handlers.
@@ -330,7 +340,13 @@ class PlaceholderOperation(models.Model):
         get_latest_by = "date_created"
         ordering = ['-date_created']
 
-    def create_action(self, action, language, placeholder, **kwargs):
+    def create_action(
+        self,
+        action: str,
+        language: str,
+        placeholder: Placeholder,
+        **kwargs: Any,
+    ) -> None:
         pre_data = kwargs.pop('pre_data', '')
 
         if pre_data:
@@ -350,10 +366,10 @@ class PlaceholderOperation(models.Model):
             **kwargs
         )
 
-    def set_pre_action_data(self, action, data):
+    def set_pre_action_data(self, action: str, data: dict[str, Any]) -> None:
         self.actions.filter(action=action).update(pre_action_data=dump_json(data))
 
-    def set_post_action_data(self, action, data):
+    def set_post_action_data(self, action: str, data: dict[str, Any]) -> None:
         self.actions.filter(action=action).update(post_action_data=dump_json(data))
 
     @cached_property
@@ -366,7 +382,7 @@ class PlaceholderOperation(models.Model):
         """
         return list(self.actions.select_related('placeholder'))
 
-    def is_editable(self, user):
+    def is_editable(self, user: AbstractBaseUser) -> bool:
         """
         Returns whether all placeholders touched by this operation are
         editable by the given user. With djangocms-versioning installed
@@ -398,7 +414,7 @@ class PlaceholderOperation(models.Model):
         operations.PASTE_PLUGIN: 'add',
     }
 
-    def get_close_frame_target(self):
+    def get_close_frame_target(self) -> tuple[str, int, str, int | None] | None:
         """
         For single-plugin operations, returns
         ``(action, plugin_id, plugin_type, parent_id)`` where ``action`` is
@@ -431,7 +447,7 @@ class PlaceholderOperation(models.Model):
                 return action, archived.pk, archived.plugin_type, data.get('parent_id')
         return None
 
-    def get_move_plugin_id(self):
+    def get_move_plugin_id(self) -> int | None:
         """
         For a move operation, returns the id of the moved plugin (read from
         the stored action data, which records it for both same-placeholder
@@ -450,7 +466,7 @@ class PlaceholderOperation(models.Model):
         return None
 
     @transaction.atomic
-    def undo(self):
+    def undo(self) -> None:
         actions = self.cached_actions
 
         for action in actions:
@@ -465,7 +481,7 @@ class PlaceholderOperation(models.Model):
         )
 
     @transaction.atomic
-    def redo(self):
+    def redo(self) -> None:
         actions = list(reversed(self.cached_actions))
 
         for action in actions:
@@ -507,28 +523,28 @@ class PlaceholderAction(models.Model):
         ordering = ['order']
         unique_together = ('operation', 'order')
 
-    def _object_version_data_hook(self, data):
+    def _object_version_data_hook(self, data: Any) -> Any:
         if isinstance(data, dict) and 'pk' in data and 'plugin_type' in data and 'position' in data:
             return ArchivedPlugin(**data)
         return data
 
-    def _get_parsed_data(self, raw_data):
+    def _get_parsed_data(self, raw_data: str) -> Any:
         data = json.loads(
             raw_data,
             object_hook=self._object_version_data_hook,
         )
         return data
 
-    def get_pre_action_data(self):
+    def get_pre_action_data(self) -> Any:
         return self._get_parsed_data(self.pre_action_data)
 
-    def get_post_action_data(self):
+    def get_post_action_data(self) -> Any:
         return self._get_parsed_data(self.post_action_data)
 
     @transaction.atomic
-    def undo(self):
+    def undo(self) -> None:
         _action_handlers[self.action]['undo'](self)
 
     @transaction.atomic
-    def redo(self):
+    def redo(self) -> None:
         _action_handlers[self.action]['redo'](self)
