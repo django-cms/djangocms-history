@@ -113,7 +113,7 @@ class ActionQueryCountTestCase(HistoryTestCase):
         self._assert_undo_redo_ok(response, 'undo/redo')
         action_selects = [
             query['sql'] for query in ctx.captured_queries
-            if query['sql'].startswith('SELECT') and table in query['sql']
+            if query['sql'].lstrip().upper().startswith('SELECT') and table in query['sql']
         ]
         self.assertEqual(
             len(action_selects), 1,

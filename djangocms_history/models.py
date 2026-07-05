@@ -380,7 +380,7 @@ class PlaceholderOperation(models.Model):
         several times (editability check, replay, response building); the
         cache keeps that to a single query.
         """
-        return list(self.actions.select_related('placeholder'))
+        return list(self.actions.select_related('placeholder').order_by('order'))
 
     def is_editable(self, user: AbstractBaseUser) -> bool:
         """
