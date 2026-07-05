@@ -1,0 +1,4 @@
+-r base.txt
+Django>=6.0,<6.1
+git+https://github.com/django-cms/django-cms
+djangocms-versioning>=2.4
