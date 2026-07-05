@@ -12,8 +12,8 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models, transaction
 from django.db.models import Q, QuerySet
 from django.dispatch import receiver
-from django.utils.functional import cached_property
 from django.http import HttpRequest
+from django.utils.functional import cached_property
 
 from cms import operations
 from cms.models import Placeholder
