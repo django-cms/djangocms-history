@@ -12,6 +12,10 @@ from .base import HistoryTestCase
 
 class OperationRecordingTestCase(HistoryTestCase):
 
+    def test_session_key_hash_requires_session_key(self):
+        with self.assertRaisesMessage(ValueError, 'A session key is required'):
+            get_session_key_hash(None)
+
     def test_add_plugin_records_operation(self):
         with self.login_user_context(self.superuser):
             plugin = self.add_plugin_via_endpoint()
@@ -57,7 +61,8 @@ class OperationRecordingTestCase(HistoryTestCase):
 
             operation = self.latest_operation()
             self.assertEqual(operation.user_session_key, get_session_key_hash(session.session_key))
-            self.assertEqual(len(operation.user_session_key), 64)
+            self.assertTrue(operation.user_session_key.startswith('sha256$'))
+            self.assertEqual(len(operation.user_session_key), 71)
 
     def test_add_nested_plugin_records_parent(self):
         parent = self.add_plugin()

@@ -325,7 +325,7 @@ class PlaceholderOperation(models.Model):
         on_delete=models.CASCADE,
         verbose_name="user",
     )
-    user_session_key = models.CharField(max_length=64, db_index=True)
+    user_session_key = models.CharField(max_length=72, db_index=True)
     date_created = models.DateTimeField(
         db_index=True,
         auto_now_add=True,
