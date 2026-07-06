@@ -22,7 +22,7 @@ from cms.signals import post_placeholder_operation, pre_placeholder_operation
 from . import action_handlers, actions, operation_handlers, signals
 from .datastructures import ArchivedPlugin
 from .helpers import get_operation_origin
-from .utils import plugin_has_m2m
+from .utils import get_session_key_hash, plugin_has_m2m
 
 dump_json = functools.partial(json.dumps, cls=DjangoJSONEncoder)
 
@@ -161,7 +161,7 @@ def archive_old_operations(
         PlaceholderOperation
         .objects
         .filter(user=request.user, site=site)
-        .exclude(user_session_key=request.session.session_key)
+        .exclude(user_session_key=get_session_key_hash(request.session.session_key))
     )
     archive_or_delete_operations(p_operations)
 
@@ -194,7 +194,7 @@ def clear_operation_history(request: HttpRequest, site: Site, origin: str) -> No
             site=site,
             origin=origin,
             user=request.user,
-            user_session_key=request.session.session_key,
+            user_session_key=get_session_key_hash(request.session.session_key),
         )
     )
 
@@ -234,7 +234,7 @@ def create_placeholder_operation(sender: Any, **kwargs: Any) -> None:
         origin=origin,
         language=language,
         user=request.user,
-        user_session_key=request.session.session_key,
+        user_session_key=get_session_key_hash(request.session.session_key),
         site=site,
     )
     handler(operation, **kwargs)
@@ -269,7 +269,7 @@ def update_placeholder_operation(sender: Any, **kwargs: Any) -> None:
     p_operations = PlaceholderOperation.objects.filter(
         site=site,
         user=request.user,
-        user_session_key=request.session.session_key
+        user_session_key=get_session_key_hash(request.session.session_key)
     )
 
     operation = p_operations.get(token=kwargs['token'])
@@ -325,8 +325,7 @@ class PlaceholderOperation(models.Model):
         on_delete=models.CASCADE,
         verbose_name="user",
     )
-    # Django uses 40 character session keys but other backends might use longer..
-    user_session_key = models.CharField(max_length=120, db_index=True)
+    user_session_key = models.CharField(max_length=64, db_index=True)
     date_created = models.DateTimeField(
         db_index=True,
         auto_now_add=True,

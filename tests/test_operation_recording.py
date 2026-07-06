@@ -1,9 +1,11 @@
+from django.conf import settings
 from django.test import override_settings
 
 from cms import operations
 
 from djangocms_history import actions
 from djangocms_history.models import PlaceholderOperation
+from djangocms_history.utils import get_session_key_hash
 
 from .base import HistoryTestCase
 
@@ -41,6 +43,21 @@ class OperationRecordingTestCase(HistoryTestCase):
         self.assertEqual(archived.position, 1)
         self.assertEqual(archived.plugin_type, 'LinkPlugin')
         self.assertEqual(archived.data['name'], 'A Link')
+
+    @override_settings(SESSION_ENGINE='django.contrib.sessions.backends.signed_cookies')
+    def test_add_plugin_with_long_signed_cookie_session_key(self):
+        with self.login_user_context(self.superuser):
+            session = self.client.session
+            session['long_value'] = ''.join(chr(33 + index % 90) for index in range(300))
+            session.save()
+            self.client.cookies[settings.SESSION_COOKIE_NAME] = session.session_key
+            self.assertGreater(len(session.session_key), 120)
+
+            self.add_plugin_via_endpoint()
+
+            operation = self.latest_operation()
+            self.assertEqual(operation.user_session_key, get_session_key_hash(session.session_key))
+            self.assertEqual(len(operation.user_session_key), 64)
 
     def test_add_nested_plugin_records_parent(self):
         parent = self.add_plugin()

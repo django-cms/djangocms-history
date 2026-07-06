@@ -16,7 +16,7 @@ from django.utils import timezone
 from cms.models import CMSPlugin, Placeholder
 from cms.utils import get_language_from_request
 
-from .utils import get_plugin_fields, get_plugin_model
+from .utils import get_plugin_fields, get_plugin_model, get_session_key_hash
 
 if TYPE_CHECKING:
     from .models import PlaceholderOperation
@@ -175,7 +175,7 @@ def get_operations_from_request(
         origin=origin,
         language=language,
         user=request.user,
-        user_session_key=request.session.session_key,
+        user_session_key=get_session_key_hash(request.session.session_key),
         date_created__gt=date,
         is_archived=False,
     )
