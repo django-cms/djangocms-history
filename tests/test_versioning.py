@@ -49,6 +49,7 @@ class VersioningGuardTestCase(HistoryTestCase):
 
         self.version.publish(self.superuser)
 
+        operation = self.latest_operation()  # reload to invalidate cache
         self.assertFalse(operation.is_editable(self.superuser))
 
     def test_undo_refused_on_published_version(self):

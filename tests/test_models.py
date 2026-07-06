@@ -1,8 +1,13 @@
+from unittest.mock import patch
+
 from django.test import override_settings
 
 from cms import operations
+from cms.models import Placeholder
 
+from djangocms_history import actions
 from djangocms_history.datastructures import ArchivedPlugin
+from djangocms_history.helpers import get_plugin_data
 from djangocms_history.models import PlaceholderOperation
 
 from .base import HistoryTestCase
@@ -104,3 +109,103 @@ class IsEditableTestCase(HistoryTestCase):
             self.assertFalse(operation.is_editable(self.superuser))
         finally:
             PlaceholderRelationField.default_checks.remove(deny)
+
+
+class QueryEfficiencyTestCase(HistoryTestCase):
+    """
+    Locks in the query behaviour of the undo/redo inspection paths: an
+    operation's actions are fetched from the database exactly once, and
+    each touched placeholder is source-checked exactly once.
+    """
+
+    def create_operation(self, operation_type=operations.ADD_PLUGIN):
+        return PlaceholderOperation.objects.create(
+            operation_type=operation_type,
+            token='token',
+            origin='/en/',
+            language='en',
+            user=self.superuser,
+            user_session_key='session',
+            site_id=1,
+        )
+
+    def patch_check_source(self, checked):
+        def check_source(placeholder, user):
+            checked.append(placeholder.pk)
+            return True
+        return patch.object(Placeholder, 'check_source', check_source)
+
+    def test_is_editable_fetches_actions_once_and_dedupes_placeholders(self):
+        operation = self.create_operation()
+        operation.create_action(
+            action=actions.ADD_PLUGIN,
+            language='en',
+            placeholder=self.placeholder,
+        )
+        operation.create_action(
+            action=actions.ADD_PLUGIN,
+            language='en',
+            placeholder=self.placeholder,
+            order=2,
+        )
+
+        checked = []
+
+        with self.patch_check_source(checked):
+            # One query: the actions (with their placeholders) themselves.
+            with self.assertNumQueries(1):
+                self.assertTrue(operation.is_editable(self.superuser))
+
+            # Both actions share one placeholder; its source is checked once.
+            self.assertEqual(checked, [self.placeholder.pk])
+
+            # The actions are cached on the operation; checking again is free.
+            with self.assertNumQueries(0):
+                self.assertTrue(operation.is_editable(self.superuser))
+
+    def test_is_editable_checks_each_distinct_placeholder(self):
+        operation = self.create_operation(operations.MOVE_PLUGIN)
+        operation.create_action(
+            action=actions.MOVE_OUT_PLUGIN,
+            language='en',
+            placeholder=self.placeholder,
+        )
+        operation.create_action(
+            action=actions.MOVE_IN_PLUGIN,
+            language='en',
+            placeholder=self.sidebar,
+            order=2,
+        )
+
+        checked = []
+
+        with self.patch_check_source(checked):
+            self.assertTrue(operation.is_editable(self.superuser))
+
+        self.assertEqual(checked, [self.placeholder.pk, self.sidebar.pk])
+
+    def test_action_inspection_runs_on_cached_actions(self):
+        plugin = self.add_plugin(name='moved')
+
+        operation = self.create_operation(operations.MOVE_PLUGIN)
+        operation.create_action(
+            action=actions.MOVE_PLUGIN,
+            language='en',
+            placeholder=self.placeholder,
+            pre_data={
+                'parent_id': None,
+                'plugins': [get_plugin_data(plugin, only_meta=True)],
+            },
+            post_data={
+                'parent_id': None,
+                'plugins': [get_plugin_data(plugin, only_meta=True)],
+            },
+        )
+
+        with self.assertNumQueries(1):
+            self.assertEqual(len(operation.cached_actions), 1)
+
+        # The inspection helpers work off the cached actions.
+        with self.assertNumQueries(0):
+            self.assertEqual(operation.get_move_plugin_id(), plugin.pk)
+            self.assertIsNone(operation.get_close_frame_target())

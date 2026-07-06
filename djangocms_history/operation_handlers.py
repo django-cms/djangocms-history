@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Callable
 
 from cms.models import CMSPlugin
+from cms.utils.plugins import get_bound_plugins
 
 from . import actions
-from .helpers import get_bound_plugins, get_plugin_data
+from .helpers import get_plugin_data
 
 if TYPE_CHECKING:
     from .models import PlaceholderOperation
