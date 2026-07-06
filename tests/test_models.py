@@ -48,6 +48,33 @@ class ActionDataTestCase(HistoryTestCase):
         self.assertEqual(archived.data['name'], 'archived')
         self.assertEqual(archived.model, plugin.get_bound_plugin().__class__)
 
+    def test_action_data_is_parsed_once(self):
+        operation = PlaceholderOperation.objects.create(
+            operation_type=operations.ADD_PLUGIN,
+            token='token',
+            origin='/en/',
+            language='en',
+            user=self.superuser,
+            user_session_key='session',
+            site_id=1,
+        )
+        operation.create_action(
+            action='add_plugin',
+            language='en',
+            placeholder=self.placeholder,
+            pre_data={'value': 'before'},
+            post_data={'value': 'after'},
+        )
+        action = operation.actions.get()
+
+        with patch.object(action, '_get_parsed_data', wraps=action._get_parsed_data) as parse:
+            self.assertEqual(action.get_pre_action_data(), {'value': 'before'})
+            self.assertEqual(action.get_pre_action_data(), {'value': 'before'})
+            self.assertEqual(action.get_post_action_data(), {'value': 'after'})
+            self.assertEqual(action.get_post_action_data(), {'value': 'after'})
+
+        self.assertEqual(parse.call_count, 2)
+
 
 class ArchiveOnLoginTestCase(HistoryTestCase):
 

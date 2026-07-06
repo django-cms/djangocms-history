@@ -338,6 +338,12 @@ class PlaceholderOperation(models.Model):
     class Meta:
         get_latest_by = "date_created"
         ordering = ['-date_created']
+        indexes = [
+            models.Index(
+                fields=['user_session_key', 'origin', 'date_created'],
+                name='history_op_lookup_idx',
+            ),
+        ]
 
     def create_action(
         self,
@@ -379,6 +385,9 @@ class PlaceholderOperation(models.Model):
         several times (editability check, replay, response building); the
         cache keeps that to a single query.
         """
+        prefetched_actions = getattr(self, '_prefetched_actions', None)
+        if prefetched_actions is not None:
+            return prefetched_actions
         return list(self.actions.select_related('placeholder').order_by('order'))
 
     def is_editable(self, user: AbstractBaseUser) -> bool:
@@ -535,9 +544,17 @@ class PlaceholderAction(models.Model):
         return data
 
     def get_pre_action_data(self) -> Any:
-        return self._get_parsed_data(self.pre_action_data)
+        return self._parsed_pre_action_data
 
     def get_post_action_data(self) -> Any:
+        return self._parsed_post_action_data
+
+    @cached_property
+    def _parsed_pre_action_data(self) -> Any:
+        return self._get_parsed_data(self.pre_action_data)
+
+    @cached_property
+    def _parsed_post_action_data(self) -> Any:
         return self._get_parsed_data(self.post_action_data)
 
     @transaction.atomic

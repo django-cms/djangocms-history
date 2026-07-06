@@ -134,13 +134,17 @@ def get_active_operation(operations: QuerySet) -> PlaceholderOperation | None:
     return operation
 
 
+_ACTIVE_OPERATION_NOT_PROVIDED = object()
+
+
 def get_inactive_operation(
     operations: QuerySet,
-    active_operation: PlaceholderOperation | None = None,
+    active_operation: PlaceholderOperation | None | object = _ACTIVE_OPERATION_NOT_PROVIDED,
 ) -> PlaceholderOperation | None:
-    active_operation = active_operation or get_active_operation(operations)
+    if active_operation is _ACTIVE_OPERATION_NOT_PROVIDED:
+        active_operation = get_active_operation(operations)
 
-    if active_operation:
+    if active_operation is not None:
         date_created = active_operation.date_created
         operations = operations.filter(date_created__gt=date_created)
 
