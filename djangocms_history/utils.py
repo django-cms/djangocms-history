@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+import hashlib
 from functools import lru_cache
 
 from cms.models import CMSPlugin
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
+
+SESSION_KEY_HASH_PREFIX = "sha256$"
+
+
+def get_session_key_hash(session_key: str | None) -> str:
+    """Return a versioned, fixed-length identifier for a session key."""
+    if session_key is None:
+        raise ValueError("A session key is required to record history")
+    return SESSION_KEY_HASH_PREFIX + hashlib.sha256(session_key.encode()).hexdigest()
 
 
 @lru_cache()
