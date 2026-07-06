@@ -23,7 +23,7 @@ class PlaceholderOperationAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request: HttpRequest, obj: Any = None) -> bool:
-        return False
+        return True  # Allow cascading deletes
 
     def get_urls(self) -> list[URLPattern]:
         # This sucks but its our only way to register the internal
