@@ -6,7 +6,7 @@ Changelog
 ==================
 
 * Added support for django CMS 4.1 and 5.x
-* Added support for Python 3.13 and Django 5.2
+* Added support for Python 3.13 and Django 5.2/6.0/6.1
 * Dropped support for django CMS 3.x (use djangocms-history 2.x instead)
 * Dropped support for Python < 3.9 and Django < 4.2
 * Plugin snapshots now store the global plugin positions introduced in
@@ -27,10 +27,15 @@ Changelog
   for that content, because such a change cannot be reliably undone.
 * Operations are no longer retired when a page is moved, deleted or its
   translation removed (these are cleaned up by the 24h window instead).
-* Operations that are retired from undo/redo (superseded or expired) are now
+* Operations that are retired from undo/redo (for example when superseded or
+  replaced by a new editing session) are now
   **deleted** by default instead of being kept forever with
   ``is_archived=True``. Set ``DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS = True`` to
   restore the previous archiving behaviour.
+* Session identifiers are stored as fixed-length hashes, allowing session
+  backends such as signed cookies to use keys longer than 120 characters.
+* Deleting a user now safely cascades through their history records without
+  requiring explicit history deletion permission.
 * Added a ``purge_archived_operations`` management command to delete archived
   operations (supports ``--days`` and ``--dry-run``).
 * The undo/redo replay logic was rewritten for the position-based plugin
