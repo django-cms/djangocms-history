@@ -17,11 +17,6 @@ django CMS History has been rewritten from the ground up. It will continue to be
 improvements will be introduced in future releases.
 
 
-.. note::
-
-    This project is considered 3rd party (no supervision by the `django CMS Association <https://www.django-cms.org/en/about-us/>`_).
-    Join us on `Discord <https://www.django-cms.org/discord/>`_ for more information.
-
 .. image:: preview.jpg
 
 *******************************************
@@ -36,7 +31,7 @@ Become part of a fantastic community and help us make django CMS the best CMS in
 We'll be delighted to receive your
 feedback in the form of issues and pull requests. Before submitting your
 pull request, please review our `contribution guidelines
-<http://docs.django-cms.org/en/latest/contributing/index.html>`_.
+<https://docs.django-cms.org/en/latest/contributing/index.html>`_.
 
 We're grateful to all contributors who have helped create and maintain this package.
 Contributors are listed at the `contributors <https://github.com/django-cms/djangocms-history/graphs/contributors>`_
@@ -48,12 +43,14 @@ Documentation
 Version support
 ---------------
 
-djangocms-history 3.x supports django CMS 4.1 and later. **If you are using
-django CMS 3.x, use djangocms-history 2.x.**
+djangocms-history 3.x supports Python 3.9 through 3.13, Django 4.2, 5.2, 6.0
+and 6.1, and django CMS 4.1, 5.0 and 5.1. **If you are using django CMS 3.x,
+use djangocms-history 2.x.**
 
 The supported Python, Django and django CMS versions are shown by the badges at the top of this page (latest
 release read directly from the published PyPI classifiers). The latest supported versions of the master branch
-are found in the ``pyproject.toml``.
+are declared in ``pyproject.toml``; the tested combinations are defined in
+``tox.ini`` and ``tests/requirements``.
 
 Installation
 ------------
@@ -86,22 +83,33 @@ On django CMS 5.1 and later, undo and redo update the structure board in place
 board state. On earlier versions the page is reloaded after each undo/redo
 instead.
 
+History scope and limitations
+.............................
+
+History records plugin operations rather than arbitrary model or page changes.
+Undo/redo is available for the last 24 hours and for one content origin per
+user session. Editing another page supersedes the previous page's history;
+another user's edit supersedes history only when it affects the same content.
+Changing a plugin with a many-to-many relation clears the history for that
+content because the change cannot be restored reliably.
+
+Operations older than 24 hours are ignored, but age alone does not immediately
+delete or archive their database rows. Superseded operations and operations
+from an earlier login session are retired when the corresponding cleanup path
+runs.
+
 Retiring operations: archive or delete
 ......................................
 
-Undo/redo is only available for a limited time (the last 24 hours). Once an
-operation falls out of that window or is superseded — for example by an edit
-on another page, by another user, or by a new editing session — it is retired
-from the undo/redo system and is never reconsidered again.
-
-By default such operations are **deleted** outright, keeping the history
-tables small. If you would rather keep them (e.g. for auditing), enable
-archiving::
+By default retired operations are **deleted** outright. If you would rather
+retain them for inspection, enable archiving::
 
     DJANGOCMS_HISTORY_ARCHIVE_OPERATIONS = True
 
 Archived operations are flagged with ``is_archived=True`` and are still never
-used by undo/redo. To remove them later and reclaim database space, run::
+used by undo/redo. They are not durable audit records: deleting related users,
+placeholders or other referenced content may delete them through database
+cascades. To remove archived operations later and reclaim database space, run::
 
     python manage.py purge_archived_operations
 
