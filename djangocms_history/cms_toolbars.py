@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from django.db.models import QuerySet
+from django.db.models import Prefetch, QuerySet, prefetch_related_objects
 from django.urls import reverse
 from django.utils.translation import gettext
 
@@ -17,7 +17,7 @@ from .helpers import (
     get_inactive_operation,
     get_operations_from_request,
 )
-from .models import PlaceholderOperation
+from .models import PlaceholderAction, PlaceholderOperation
 
 
 class AjaxButton(BaseButton):
@@ -67,6 +67,21 @@ class UndoRedoToolbar(CMSToolbar):
             return
 
         self.active_operation = self.get_active_operation()
+        self.inactive_operation = self.get_inactive_operation()
+        operations = [
+            operation
+            for operation in (self.active_operation, self.inactive_operation)
+            if operation is not None
+        ]
+        if operations:
+            prefetch_related_objects(
+                operations,
+                Prefetch(
+                    'actions',
+                    queryset=PlaceholderAction.objects.select_related('placeholder').order_by('order'),
+                    to_attr='_prefetched_actions',
+                ),
+            )
         self.add_buttons()
 
     def get_operations(self) -> QuerySet:
@@ -132,9 +147,8 @@ class UndoRedoToolbar(CMSToolbar):
         return button
 
     def get_redo_button(self) -> AjaxButton:
-        operation = self.get_inactive_operation()
         url = reverse('admin:djangocms_history_redo')
-        disabled = not self._operation_is_applicable(operation)
+        disabled = not self._operation_is_applicable(self.inactive_operation)
         button = self._get_ajax_button(
             name=gettext('Redo'),
             url=url,

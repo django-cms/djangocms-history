@@ -1,10 +1,13 @@
 from unittest.mock import patch
 
+from django.db import connection
 from django.test import RequestFactory
+from django.test.utils import CaptureQueriesContext
 
+from cms.models import Placeholder
 from cms.toolbar.toolbar import CMSToolbar as RequestToolbar
 
-from djangocms_history.models import PlaceholderOperation
+from djangocms_history.models import PlaceholderAction, PlaceholderOperation
 
 from .base import HistoryTestCase
 
@@ -103,3 +106,27 @@ class UndoRedoToolbarTestCase(HistoryTestCase):
 
         self.assertTrue(undo_button.disabled)
         self.assertTrue(redo_button.disabled)
+
+    def test_actions_for_undo_and_redo_candidates_are_fetched_together(self):
+        with self.login_user_context(self.superuser):
+            self.add_plugin_via_endpoint(name='first')
+            self.add_plugin_via_endpoint(name='second')
+            self.undo()
+            toolbar = self.get_toolbar()
+
+            with (
+                patch.object(Placeholder, 'check_source', return_value=True),
+                CaptureQueriesContext(connection) as queries,
+            ):
+                undo_button, redo_button = self.get_buttons(toolbar)
+
+        self.assertFalse(undo_button.disabled)
+        self.assertFalse(redo_button.disabled)
+        action_table = PlaceholderAction._meta.db_table
+        action_selects = [
+            query['sql']
+            for query in queries.captured_queries
+            if query['sql'].lstrip().upper().startswith('SELECT')
+            and action_table in query['sql']
+        ]
+        self.assertEqual(len(action_selects), 1)
