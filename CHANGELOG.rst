@@ -2,7 +2,7 @@
 Changelog
 =========
 
-3.0.0 (unreleased)
+3.0.0 (2026-07-08)
 ==================
 
 * Added support for django CMS 4.1 and 5.x
