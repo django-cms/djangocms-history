@@ -7,12 +7,6 @@ django CMS History
 **django CMS History** is an addon application to provide undo/redo functionality in `django CMS
 <https://django-cms.org/>`_, by maintaining content history.
 
-Some of the functionality in this application was previously included in django CMS itself. However, it became apparent
-that some users did not want it, and some wanted functionality that worked differently.
-
-In keeping with the django CMS philosophy of maintaining only core CMS functionality as part of the package itself,
-history management was removed from django CMS in version 3.4 and has been spun off into an independent application.
-
 django CMS History has been rewritten from the ground up. It will continue to be developed. New functionality and
 improvements will be introduced in future releases.
 
